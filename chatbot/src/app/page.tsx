@@ -361,9 +361,9 @@ export default function Page() {
                   onClick={resetToHome}
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
                 >
-                  <div className="relative bg-blue-600 text-white p-2 rounded-lg flex items-center justify-center w-10 h-10">
-                    <MessageSquare className="w-6 h-6" />
-                    <span className="absolute inset-0 flex items-center justify-center font-bold text-xs leading-none tracking-tighter">BIAN</span>
+                  <div className="relative bg-blue-600 text-white rounded-lg flex items-center justify-center w-10 h-10">
+                    <MessageSquare className="w-7 h-7 opacity-80" strokeWidth={1.5} />
+                    <span className="absolute inset-0 flex items-center justify-center font-bold text-xs leading-none tracking-tighter pb-0.5">BIAN</span>
                   </div>
                   <span className="font-semibold text-xl">BIAN <span className="text-blue-600">AI</span> Assistant</span>
                 </button>
