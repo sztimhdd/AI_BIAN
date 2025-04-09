@@ -1,4 +1,5 @@
 import { CoreMessage } from "ai";
+// import { StreamingTextResponse } from "@ai-sdk/core";
 // import { openai } from "@ai-sdk/openai"; // 移除 OpenAI 导入
 // import { groq } from "@ai-sdk/groq"; // 移除 Groq 导入
 import { GoogleGenerativeAI } from "@google/generative-ai"; // 导入 Google Generative AI 库
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
     if (messages.length > 0) {
       try {
         const previousMessages = messages.slice(0, -1);
-        context = await retrieveData(String(messages[messages.length - 1].content), previousMessages, llmProvider);
+        context = await retrieveData(String(messages[messages.length - 1].content), previousMessages);
       } catch (retrieveError: any) {
         return new Response(
           JSON.stringify({
@@ -119,28 +120,24 @@ For example, if you're using information from the chunk labeled [source=3&link=h
    // console.log(`Sending messages to Google Gemini LLM (${model})`, messages);
 
     // Generate content
-    const result = await generativeModel.generateContent(messages[messages.length - 1].content);
+    const result = await generativeModel.generateContent(messages[messages.length - 1].content as string);
     console.log("Result from Gemini API:", result);
-    // Ensure the returned result format is correct
+    
+    // Extract response text
+    let responseText = "";
     if (result && result.response) {
-      // Handle candidates response format
       if (result.response.candidates && result.response.candidates.length > 0) {
-        const responseText = result.response.candidates[0].content.parts[0].text; // Extract text content
-        return new Response(
-          JSON.stringify({
-            response: responseText // Use extracted text
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+        responseText = result.response.candidates[0]?.content?.parts[0]?.text ?? '';
+        if (!responseText) {
+          console.warn("Extracted empty responseText from Gemini result candidates.");
+        }
+      } else if (typeof result.response.text === "function") {
+        console.log("Attempting to extract text using response.text()");
+        responseText = result.response.text();
       } else if (typeof result.response === "string") {
-        // Handle simple string response format
-        return new Response(
-          JSON.stringify({
-            response: result.response // Return direct string response
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+        responseText = result.response;
       } else {
+        console.error("Unexpected response format, cannot extract text:", result.response);
         return new Response(
           JSON.stringify({
             error: "Invalid response format from Gemini API."
@@ -149,15 +146,42 @@ For example, if you're using information from the chunk labeled [source=3&link=h
         );
       }
     } else {
+      console.error("Invalid or missing response object from Gemini API:", result);
       return new Response(
         JSON.stringify({
-          error: "Invalid response format from Gemini API."
+          error: "Invalid response structure from Gemini API."
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    // Add log before creating stream
+    console.log("Response text extracted:", responseText ? responseText.substring(0, 100) + "..." : "EMPTY");
+
+    // Fix: Create a stream directly from the responseText instead of using streamText
+    // Format the output according to Vercel AI SDK Stream Data format (0: for text)
+    const readableStream = new ReadableStream({
+      start(controller) {
+        const formattedChunk = `0:"${JSON.stringify(responseText).slice(1, -1)}"\n`; // Format as 0:"<escaped-text>"\n
+        controller.enqueue(new TextEncoder().encode(formattedChunk));
+        controller.close();
+      }
+    });
+
+    // Add log after successful stream creation
+    console.log("ReadableStream created successfully with AI SDK data format.");
+
+    // Return the stream using the standard Web API Response
+    // Add X-Experimental-Stream-Data header
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Experimental-Stream-Data': 'true' // Indicate AI SDK Stream Data format
+      }
+    });
   } catch (error: any) {
-    console.error("Error in chat API:", error);
+    console.error("Error in chat API route handler:", error);
+    console.error("Error Cause:", error.cause);
     return new Response(
       JSON.stringify({
         error: error.message || "An unexpected error occurred"
