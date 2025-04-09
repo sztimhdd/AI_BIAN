@@ -142,7 +142,7 @@ Output only the rewritten English query string.
     // Prepare the final answer generation prompt
     const finalAnswerPrompt = `
 # ROLE
-You are an expert assistant specializing in BIAN.
+You are an enterprise BIAN expert specializing in BIAN and enterprise architecture.
 
 # TASK
 Provide a comprehensive and accurate answer in English to the user's question.
