@@ -124,6 +124,10 @@ export default function Page() {
   const [showHero, setShowHero] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showIntroPanel, setShowIntroPanel] = useState(true);
+  const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  
+  const resourcesDropdownRef = useRef<HTMLDivElement>(null);
 
   // Toggle dark mode
   useEffect(() => {
@@ -148,6 +152,19 @@ export default function Page() {
     
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (resourcesDropdownRef.current && !resourcesDropdownRef.current.contains(event.target as Node)) {
+        setShowResourcesDropdown(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleNewChat = () => {
@@ -191,14 +208,18 @@ export default function Page() {
 
   const handleOptionSelect = async (option: PlaceholderOption) => {
     setSelectedOption(option);
-    const event = { target: { value: option.text } } as React.ChangeEvent<HTMLInputElement>;
-    handleInputChange(event);
     setShowPlaceholders(false);
     setErrorMessage(null);
     setShowHero(false);
     setShowIntroPanel(false);
-    const submitEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+    
+    const userMessage = { role: "user", content: option.text };
+    setMessages((prevMessages) => [...prevMessages, userMessage as Message]);
+    
     try {
+      const submitEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+      const event = { target: { value: option.text } } as React.ChangeEvent<HTMLInputElement>;
+      handleInputChange(event);
       await handleSubmit(submitEvent);
     } catch (err: any) {
       setErrorMessage(err.message || "An error occurred while processing your request.");
@@ -216,6 +237,11 @@ export default function Page() {
     } catch (err: any) {
       setErrorMessage(err.message || "An error occurred while processing your request.");
     }
+  };
+
+  const resetToHome = () => {
+    handleNewChat();
+    setShowHero(true);
   };
 
   const MessageDialog = ({ message }: { message: Message }) => (
@@ -247,6 +273,84 @@ export default function Page() {
     </div>
   );
 
+  const AboutModal = () => (
+    <div 
+      className="fixed inset-0 bg-black/50 dark:bg-gray-900/80 flex items-center justify-center z-50 backdrop-blur-sm"
+      onClick={() => setShowAboutModal(false)}
+    >
+      <div 
+        className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-3xl w-full mx-4 max-h-[80vh] overflow-auto shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">About BIAN AI Assistant</h2>
+          <button
+            onClick={() => setShowAboutModal(false)}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="prose dark:prose-invert max-w-none">
+          <h3>产品概述</h3>
+          <p>
+            AI_BIAN是一个基于Next.js 14开发的智能问答系统，专门针对BIAN（Banking Industry Architecture Network）框架提供专业解答。
+            系统采用RAG（Retrieval-Augmented Generation）技术，结合Gemini Pro大语言模型，为用户提供准确、全面的BIAN相关知识。
+          </p>
+          
+          <h3>核心功能</h3>
+          <ul>
+            <li><strong>智能问答</strong>：针对BIAN框架的专业问题提供准确回答</li>
+            <li><strong>查询改写</strong>：将用户自然语言问题转换为BIAN专业查询</li>
+            <li><strong>文档检索</strong>：从BIAN知识库中检索相关文档片段</li>
+            <li><strong>综合响应</strong>：结合RAG结果和Gemini知识生成完整答案</li>
+            <li><strong>流式响应</strong>：实时显示生成过程，提升用户体验</li>
+          </ul>
+          
+          <h3>技术栈</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse my-4">
+              <thead>
+                <tr className="border-b border-gray-300 dark:border-gray-700">
+                  <th className="p-2 text-left font-semibold">组件</th>
+                  <th className="p-2 text-left font-semibold">技术</th>
+                  <th className="p-2 text-left font-semibold">用途</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="p-2">前端</td>
+                  <td className="p-2">Next.js 14 (App Router)</td>
+                  <td className="p-2">用户界面和交互</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="p-2">部署</td>
+                  <td className="p-2">Railway</td>
+                  <td className="p-2">应用托管和扩展</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="p-2">向量检索</td>
+                  <td className="p-2">Vectorize.io</td>
+                  <td className="p-2">BIAN文档检索</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="p-2">大语言模型</td>
+                  <td className="p-2">Google Gemini Pro</td>
+                  <td className="p-2">查询改写和答案生成</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+            <p>© 2024 BIAN AI Assistant. All rights reserved.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className={`flex flex-col min-h-screen ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Navigation Bar */}
@@ -255,12 +359,15 @@ export default function Page() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="flex items-center gap-2">
+                <button 
+                  onClick={resetToHome}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
+                >
                   <div className="bg-blue-600 text-white p-1.5 rounded">
                     <MessageSquare className="w-5 h-5" />
                   </div>
                   <span className="font-semibold text-xl">BIAN <span className="text-blue-600">AI</span> Assistant</span>
-                </div>
+                </button>
               </div>
             </div>
             
@@ -268,12 +375,55 @@ export default function Page() {
               <a href="https://bian.org" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 transition-colors">
                 BIAN Website <ExternalLink className="w-3.5 h-3.5" />
               </a>
-              <a href="#resources" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                Resources
-              </a>
-              <a href="#about" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              
+              <div className="relative" ref={resourcesDropdownRef}>
+                <button 
+                  onClick={() => setShowResourcesDropdown(!showResourcesDropdown)}
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+                >
+                  Resources <ChevronDown className={`w-4 h-4 transition-transform ${showResourcesDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showResourcesDropdown && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-20 border border-gray-200 dark:border-gray-700">
+                    <a 
+                      href="https://bian.org/servicelandscape-12-0-0/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <div className="w-5 h-5 flex items-center justify-center">🗺️</div>
+                      BIAN Service Landscape
+                    </a>
+                    <a 
+                      href="https://www.vanharen.net/standards/bian-banking-architecture/#Prepare" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <div className="w-5 h-5 flex items-center justify-center">🎓</div>
+                      Van Haren BIAN Certification
+                    </a>
+                    <a 
+                      href="https://en.wikipedia.org/wiki/Bian" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <div className="w-5 h-5 flex items-center justify-center">📚</div>
+                      Wikipedia - BIAN
+                    </a>
+                  </div>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => setShowAboutModal(true)}
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
                 About
-              </a>
+              </button>
+              
               <button 
                 onClick={() => setDarkMode(!darkMode)}
                 className="ml-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -305,7 +455,6 @@ export default function Page() {
           </div>
         </div>
         
-        {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
@@ -317,20 +466,47 @@ export default function Page() {
               >
                 BIAN Website <ExternalLink className="w-3.5 h-3.5" />
               </a>
-              <a
-                href="#resources"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800"
+              
+              <a 
+                href="https://bian.org/servicelandscape-12-0-0/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800 flex items-center gap-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Resources
+                <div className="w-5 h-5 flex items-center justify-center">🗺️</div>
+                BIAN Service Landscape
               </a>
-              <a
-                href="#about"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800"
+              <a 
+                href="https://www.vanharen.net/standards/bian-banking-architecture/#Prepare" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800 flex items-center gap-2"
                 onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">🎓</div>
+                Van Haren BIAN Certification
+              </a>
+              <a 
+                href="https://en.wikipedia.org/wiki/Bian" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800 flex items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">📚</div>
+                Wikipedia - BIAN
+              </a>
+              
+              <button
+                onClick={() => {
+                  setShowAboutModal(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800"
               >
                 About
-              </a>
+              </button>
             </div>
           </div>
         )}
@@ -602,6 +778,7 @@ export default function Page() {
         </div>
       </div>
 
+      {showAboutModal && <AboutModal />}
       {selectedMessage && <MessageDialog message={selectedMessage} />}
       
       {/* Add global styles for animations */}
