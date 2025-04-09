@@ -98,7 +98,7 @@ const formatJSON = (obj: Record<string, unknown>) => {
 };
 
 export default function Page() {
-  const { messages, setMessages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
+  const { messages, setMessages, input, handleInputChange, handleSubmit, isLoading, error, append } = useChat({
     onError: (error) => {
       console.error("Chat error:", error);
       setErrorMessage(error.message || "An error occurred while processing your request.");
@@ -213,15 +213,13 @@ export default function Page() {
     setShowHero(false);
     setShowIntroPanel(false);
     
-    const userMessage = { role: "user", content: option.text };
-    setMessages((prevMessages) => [...prevMessages, userMessage as Message]);
-    
     try {
-      const submitEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
-      const event = { target: { value: option.text } } as React.ChangeEvent<HTMLInputElement>;
-      handleInputChange(event);
-      await handleSubmit(submitEvent);
+      await append({
+        role: "user",
+        content: option.text,
+      });
     } catch (err: any) {
+      console.error("Error sending placeholder message:", err);
       setErrorMessage(err.message || "An error occurred while processing your request.");
     }
   };
