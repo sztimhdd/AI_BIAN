@@ -361,9 +361,9 @@ export default function Page() {
                   onClick={resetToHome}
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
                 >
-                  <div className="relative bg-blue-600 text-white rounded-lg flex items-center justify-center w-10 h-10">
-                    <MessageSquare className="w-7 h-7 opacity-80" strokeWidth={1.5} />
-                    <span className="absolute inset-0 flex items-center justify-center font-bold text-xs leading-none tracking-tighter pb-0.5">BIAN</span>
+                  <div className="bg-blue-600 text-white rounded-lg flex flex-col items-center justify-center p-2 w-12 h-12">
+                    <MessageSquare className="w-5 h-5 mb-0.5" strokeWidth={2} />
+                    <span className="font-bold text-[0.6rem] leading-none tracking-tight">BIAN</span>
                   </div>
                   <span className="font-semibold text-xl">BIAN <span className="text-blue-600">AI</span> Assistant</span>
                 </button>
@@ -528,10 +528,6 @@ export default function Page() {
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
                     <Zap className="w-4 h-4" />
                     <span>Powered by RAG + Generative AI</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
-                    <Info className="w-4 h-4" />
-                    <span>Expert BIAN Knowledge</span>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
                     <MessageSquare className="w-4 h-4" />
