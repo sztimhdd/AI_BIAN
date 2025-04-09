@@ -12,9 +12,11 @@ interface PlaceholderOption {
 }
 
 const placeholderOptions: PlaceholderOption[] = [
-  { emoji: "⚡️", text: "What is BIAN?" },
-  { emoji: "🤖", text: "What is the Contact Center in BIAN?" },
-  { emoji: "🌟", text: "How to use BIAN?" },
+  { emoji: "🎯", text: "What is the primary purpose of the BIAN Service Landscape?" },
+  { emoji: "🔗", text: "Explain the difference between a Service Domain and a Service Operation in BIAN terminology." },
+  { emoji: "💻", text: "How does BIAN's framework support API development in banking systems?" },
+  { emoji: "🗺️", text: "Describe the relationship between Business Scenarios and Service Operations in BIAN." },
+  { emoji: "🏗️", text: "What are the core design principles that underpin the BIAN framework?" },
 ];
 
 const formatJSON = (obj: Record<string, unknown>) => {
