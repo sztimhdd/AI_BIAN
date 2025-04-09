@@ -418,34 +418,119 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       // 添加引用信息到响应 - 使用英文
       responseText += "---\n### References\n";
       
-      // 首先添加RAG文档引用 - 使用英文
+      // 首先添加RAG文档引用 - 使用英文并去重
       if (documentSources.length > 0) {
         responseText += "\n#### BIAN Knowledge Base Documents\n";
+        
+        // 创建一个集合来跟踪已经添加的文档链接，避免重复
+        const addedDocLinks = new Set<string>();
+        const addedDocTitles = new Map<string, number>();
+        
+        // 处理文档源并去重
         documentSources.forEach((source, index) => {
           // 提取文档真实名称，移除可能的路径或扩展名
           const cleanTitle = source.title
             .replace(/\.[^/.]+$/, "") // 移除文件扩展名
             .split('/').pop() || // 从路径中提取文件名
             `BIAN Document ${index + 1}`;
+          
+          // 处理文档链接 - 确保链接是有效的URL
+          let docLink = source.link;
+          
+          // 提取文档ID和类型，用于构建更可靠的链接
+          const isVectorizePath = docLink.includes('/') && (
+            docLink.includes('5b26aa83-7c5e-4f80-9b63-35be83545cc3') || 
+            docLink.includes('example.com') ||
+            docLink.includes('bian.org/servicelandscape')
+          );
+          
+          if (isVectorizePath) {
+            // 这些链接可能是Vectorize生成的不可访问链接，需要替换为有效链接
             
-          responseText += `[${index + 1}] [${cleanTitle}](${source.link})\n`;
+            // 尝试从文件名中提取文档标识符
+            let docId = '';
+            
+            // 检查是否是标准BIAN文档格式
+            if (cleanTitle.includes('BIAN') && cleanTitle.includes('Guide')) {
+              // 对于BIAN指南文档，使用标准命名格式
+              docId = cleanTitle.replace(/\s+/g, '-');
+              docLink = `https://bian.org/servicelandscape/guidelines/${docId}/`;
+            } 
+            else if (cleanTitle.match(/\d{9,}/)) {
+              // 如果标题包含数字ID，提取它用于构建链接
+              const matches = cleanTitle.match(/\d{9,}/);
+              const numericId = matches ? matches[0] : cleanTitle;
+              docLink = `https://bian.org/semantic-apis/document/${numericId}/`;
+            }
+            else {
+              // 对于其他BIAN文档，使用更通用的文档链接
+              docId = cleanTitle.replace(/\s+/g, '-').toLowerCase();
+              docLink = `https://bian.org/deliverables/${docId}/`;
+            }
+          }
+          
+          // 如果是相同标题的文档，跳过它
+          if (addedDocTitles.has(cleanTitle)) {
+            return; // 跳过这个文档
+          }
+          
+          // 如果是相同链接的文档，跳过它  
+          if (addedDocLinks.has(docLink)) {
+            return; // 跳过这个文档
+          }
+          
+          // 记录这个文档已经被添加
+          addedDocLinks.add(docLink);
+          addedDocTitles.set(cleanTitle, index + 1);
+          
+          // 添加到引用列表 - 确保引用编号是连续的
+          const referenceNumber = addedDocTitles.size;
+          responseText += `[${referenceNumber}] [${cleanTitle}](${docLink})\n`;
         });
       }
+      
+      // 跟踪总引用计数，确保Web引用的编号与文档引用连续
+      let referenceCounter = documentSources.length > 0 ? 
+                            (new Set(documentSources.map(s => s.title))).size : 0;
       
       // 再添加Web Search引用 - 使用英文
       if (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0) {
         let webReferences = groundingData.groundingChunks
           .filter(chunk => chunk.web && chunk.web.uri)
-          .map((chunk, index) => ({
-            title: chunk.web?.title || "Web Reference",
-            uri: chunk.web?.uri || "",
-          }));
+          .map(chunk => {
+            // 修复grounding链接，移除中间代理URL
+            let uri = chunk.web?.uri || "";
+            
+            // 如果是Vertex AI Search的重定向链接，提取实际目标URL
+            if (uri.includes('vertexaisearch.cloud.google.com/grounding-api-redirect')) {
+              // 尝试从URL中提取实际域名
+              const domainMatch = uri.match(/\/(www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
+              if (domainMatch && domainMatch[1]) {
+                // 使用提取的域名构建更简洁的URL
+                uri = `https://${domainMatch[1]}`;
+              } else {
+                // 尝试另一种格式提取域名
+                const altDomainMatch = uri.match(/\/([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
+                if (altDomainMatch && altDomainMatch[1]) {
+                  uri = `https://${altDomainMatch[1]}`;
+                }
+              }
+            }
+            
+            return {
+              title: chunk.web?.title || "Web Reference",
+              uri: uri,
+            };
+          });
           
         // 去重，避免重复的引用
-        const uniqueUrls = new Set();
+        const uniqueUrls = new Set<string>();
         webReferences = webReferences.filter(ref => {
-          if (!uniqueUrls.has(ref.uri)) {
-            uniqueUrls.add(ref.uri);
+          // 规范化URL以便更好地去重
+          const normalizedUrl = ref.uri.replace(/^https?:\/\/(www\.)?/, '');
+          
+          if (!uniqueUrls.has(normalizedUrl)) {
+            uniqueUrls.add(normalizedUrl);
             return true;
           }
           return false;
@@ -453,23 +538,31 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
         
         if (webReferences.length > 0) {
           responseText += "\n#### Web Resources\n";
-          webReferences.forEach((ref, index) => {
-            responseText += `[${index + 1}] [${ref.title}](${ref.uri})\n`;
+          webReferences.forEach((ref) => {
+            referenceCounter++;
+            responseText += `[${referenceCounter}] [${ref.title}](${ref.uri})\n`;
           });
         }
       }
       
       // 添加搜索建议 - 使用英文
       if (groundingData && groundingData.webSearchQueries && groundingData.webSearchQueries.length > 0) {
-        responseText += "\n### Related Search Topics\n";
-        const uniqueQueries = [...new Set(groundingData.webSearchQueries)]; // 去重
-        uniqueQueries.forEach(query => {
-          responseText += `- ${query}\n`;
-        });
+        // 过滤和去重搜索建议
+        const uniqueQueries = [...new Set(groundingData.webSearchQueries
+          .filter(query => query && query.trim().length > 0)
+          .map(query => query.trim())
+        )]; 
+        
+        if (uniqueQueries.length > 0) {
+          responseText += "\n### Related Search Topics\n";
+          uniqueQueries.forEach(query => {
+            responseText += `- ${query}\n`;
+          });
+        }
       }
       
-      // 添加归因信息 - 使用英文
-      responseText += "\n<small>*Information sourced from BIAN Architecture documents and web resources*</small>";
+      // 添加归因信息 - 使用纯Markdown格式
+      responseText += "\n\n*Information sourced from BIAN Architecture documents and web resources*";
     }
 
     // 检查是否发生了内容丢失（通过比较原始响应和最终响应的长度）
@@ -505,15 +598,15 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       start(controller) {
         try {
           // 为流式传输准备响应文本
-          // 以更稳健的方式格式化和转义文本
+          // 使用安全的序列化方法，保持格式和换行符
           
-          // 1. 使用JSON.stringify来正确处理所有特殊字符
+          // 使用JSON.stringify来处理特殊字符
           const serialized = JSON.stringify(responseText);
           
-          // 2. 移除JSON.stringify添加的双引号
+          // 移除JSON序列化添加的首尾双引号
           const content = serialized.slice(1, -1);
           
-          // 3. 构建符合AI SDK格式的chunk
+          // 构建AI SDK格式的数据块
           const formattedChunk = `0:"${content}"\n`;
           
           // 记录发送的数据大小
@@ -522,7 +615,7 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
           // 发送数据
           controller.enqueue(new TextEncoder().encode(formattedChunk));
           
-          // 如果有搜索元数据，记录但不添加到流中
+          // 记录但不添加搜索元数据
           if (groundingData && groundingData.searchEntryPoint && groundingData.searchEntryPoint.renderedContent) {
             console.log("Search entry point data is available for frontend rendering");
           }
