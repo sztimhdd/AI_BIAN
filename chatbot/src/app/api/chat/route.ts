@@ -184,26 +184,59 @@ Output only the rewritten English query string.
     if (context && context.documents) {
       // 保存文档源信息以便后续添加引用
       documentSources = context.documents.map((doc, index) => {
-        // 简化文档链接提取逻辑
+        // 改进文档链接提取和标准化逻辑
         let docLink;
         
-        // 检查文档对象中是否有直接的URL字段
+        // 1. 先尝试从文档直接属性获取链接
         if (doc.source_url || doc.url || doc.link || doc.document_url) {
           docLink = doc.source_url || doc.url || doc.link || doc.document_url;
         } 
-        // 检查元数据中是否有URL相关字段
+        // 2. 再尝试从元数据中获取
         else if (doc.metadata && (doc.metadata.url || doc.metadata.source_url || doc.metadata.link)) {
           docLink = doc.metadata.url || doc.metadata.source_url || doc.metadata.link;
         } 
-        // 使用更规范的默认链接格式
+        // 3. 如果以上方法都失败，则构建默认链接
         else {
-          // 使用文档标识符构建一致的链接格式
-          const docIdentifier = doc.source_display_name || doc.filename || `document-${index+1}`;
-          docLink = `https://bian.org/servicelandscape/reference/${encodeURIComponent(docIdentifier)}`;
+          // 提取文档标识符用于链接构建
+          let docIdentifier;
+          
+          // 尝试从文件名或显示名获取标识符
+          if (doc.source_display_name) {
+            docIdentifier = doc.source_display_name;
+          } else if (doc.filename) {
+            // 从文件名中去除扩展名和路径
+            docIdentifier = doc.filename.replace(/\.[^/.]+$/, "").split('/').pop();
+          } else {
+            docIdentifier = `document-${index+1}`;
+          }
+          
+          // 对标识符进行URL编码和格式化
+          const encodedIdentifier = encodeURIComponent(
+            docIdentifier.toLowerCase().replace(/\s+/g, '-')
+          );
+          
+          // 构建BIAN标准化链接格式
+          docLink = `https://bian.org/servicelandscape/reference/${encodedIdentifier}`;
         }
         
-        // 简化文档标题提取逻辑
-        const docTitle = doc.source_display_name || doc.filename || `BIAN Document ${index + 1}`;
+        // 改进文档标题提取逻辑，更好地处理文档名称
+        let docTitle;
+        
+        if (doc.source_display_name) {
+          // 如果有显示名称，直接使用
+          docTitle = doc.source_display_name;
+        } else if (doc.filename) {
+          // 从文件名中提取更好的标题（去除扩展名和格式化）
+          const rawName = doc.filename.replace(/\.[^/.]+$/, "").split('/').pop();
+          
+          // 尝试将下划线和连字符转换为空格，并添加适当的大小写
+          docTitle = rawName
+            ?.replace(/[_-]/g, ' ')
+            ?.replace(/\b\w/g, l => l.toUpperCase()) || `BIAN Document ${index + 1}`;
+        } else {
+          // 默认标题
+          docTitle = `BIAN Document ${index + 1}`;
+        }
         
         return {
           title: docTitle,
@@ -418,123 +451,224 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       // 添加引用信息到响应 - 使用英文
       responseText += "---\n### References\n";
       
-      // 首先添加RAG文档引用 - 使用英文并去重
+      // 首先添加RAG文档引用 - 使用英文并改进去重逻辑
       if (documentSources.length > 0) {
         responseText += "\n#### BIAN Knowledge Base Documents\n";
         
-        // 创建一个集合来跟踪已经添加的文档链接，避免重复
-        const addedDocLinks = new Set<string>();
-        const addedDocTitles = new Map<string, number>();
+        // 创建一个Map来跟踪已添加的文档，使用标准化的URL作为键
+        const addedDocuments = new Map();
         
         // 处理文档源并去重
         documentSources.forEach((source, index) => {
-          // 提取文档真实名称，移除可能的路径或扩展名
-          const cleanTitle = source.title
-            .replace(/\.[^/.]+$/, "") // 移除文件扩展名
-            .split('/').pop() || // 从路径中提取文件名
-            `BIAN Document ${index + 1}`;
+          // 提取文档真实名称
+          let cleanTitle = source.title || `BIAN Document ${index + 1}`;
           
-          // 处理文档链接 - 确保链接是有效的URL
-          let docLink = source.link;
+          // 标准化链接URL以便更好地去重
+          let normalizedLink = source.link.replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
           
-          // 提取文档ID和类型，用于构建更可靠的链接
-          const isVectorizePath = docLink.includes('/') && (
-            docLink.includes('5b26aa83-7c5e-4f80-9b63-35be83545cc3') || 
-            docLink.includes('example.com') ||
-            docLink.includes('bian.org/servicelandscape')
-          );
+          // 如果这个URL已经添加过，跳过
+          if (addedDocuments.has(normalizedLink)) {
+            return;
+          }
           
-          if (isVectorizePath) {
-            // 这些链接可能是Vectorize生成的不可访问链接，需要替换为有效链接
+          // 特殊处理BIAN特定链接格式
+          if (normalizedLink.includes('bian.org')) {
+            // 对于BIAN官方文档，进行更精确的链接处理
             
-            // 尝试从文件名中提取文档标识符
-            let docId = '';
+            // 提取BIAN文档类型和识别符，以生成最合适的链接格式
+            const isBianDocument = (
+              cleanTitle.toLowerCase().includes('bian') || 
+              normalizedLink.includes('bian.org')
+            );
             
-            // 检查是否是标准BIAN文档格式
-            if (cleanTitle.includes('BIAN') && cleanTitle.includes('Guide')) {
-              // 对于BIAN指南文档，使用标准命名格式
-              docId = cleanTitle.replace(/\s+/g, '-');
-              docLink = `https://bian.org/servicelandscape/guidelines/${docId}/`;
-            } 
-            else if (cleanTitle.match(/\d{9,}/)) {
-              // 如果标题包含数字ID，提取它用于构建链接
-              const matches = cleanTitle.match(/\d{9,}/);
-              const numericId = matches ? matches[0] : cleanTitle;
-              docLink = `https://bian.org/semantic-apis/document/${numericId}/`;
+            if (isBianDocument) {
+              // 识别BIAN文档的不同类型
+              const isServiceDomain = (
+                cleanTitle.includes('Service Domain') || 
+                cleanTitle.includes('SD ') ||
+                cleanTitle.match(/\bSD\b/)
+              );
+              
+              const isGuide = (
+                cleanTitle.includes('Guide') || 
+                cleanTitle.includes('Handbook') || 
+                cleanTitle.includes('Guidelines')
+              );
+              
+              const isAPISpec = (
+                cleanTitle.includes('API') || 
+                cleanTitle.includes('Specification') ||
+                cleanTitle.includes('Semantic API')
+              );
+              
+              // 提取数字ID（如果存在）
+              const numericIdMatch = cleanTitle.match(/\d{7,}/);
+              const hasNumericId = numericIdMatch !== null;
+              
+              // 根据文档类型生成最合适的链接
+              if (hasNumericId) {
+                // 如果有数字ID，优先使用它构建语义API文档链接
+                const numericId = numericIdMatch![0];
+                normalizedLink = `bian.org/semantic-apis/document/${numericId}`;
+                source.link = `https://${normalizedLink}`;
+              } 
+              else if (isServiceDomain) {
+                // 处理服务域文档
+                const sdName = cleanTitle
+                  .replace(/Service Domain/i, '')
+                  .replace(/\bSD\b/i, '')
+                  .trim()
+                  .replace(/\s+/g, '-')
+                  .toLowerCase();
+                
+                normalizedLink = `bian.org/servicelandscape/service-domains/${sdName}`;
+                source.link = `https://${normalizedLink}`;
+              }
+              else if (isAPISpec) {
+                // 处理API规范文档
+                const apiName = cleanTitle
+                  .replace(/API|Specification|Semantic/ig, '')
+                  .trim()
+                  .replace(/\s+/g, '-')
+                  .toLowerCase();
+                
+                normalizedLink = `bian.org/semantic-apis/apis/${apiName}`;
+                source.link = `https://${normalizedLink}`;
+              }
+              else if (isGuide) {
+                // 处理指南类文档
+                const guideName = cleanTitle
+                  .replace(/Guide|Handbook|Guidelines/ig, '')
+                  .trim()
+                  .replace(/\s+/g, '-')
+                  .toLowerCase();
+                
+                normalizedLink = `bian.org/servicelandscape/guidelines/${guideName}`;
+                source.link = `https://${normalizedLink}`;
+              }
+              else {
+                // 处理其他BIAN文档
+                const docId = cleanTitle
+                  .replace(/BIAN/i, '')
+                  .trim()
+                  .replace(/\s+/g, '-')
+                  .toLowerCase();
+                
+                normalizedLink = `bian.org/deliverables/${docId}`;
+                source.link = `https://${normalizedLink}`;
+              }
             }
-            else {
-              // 对于其他BIAN文档，使用更通用的文档链接
-              docId = cleanTitle.replace(/\s+/g, '-').toLowerCase();
-              docLink = `https://bian.org/deliverables/${docId}/`;
-            }
           }
           
-          // 如果是相同标题的文档，跳过它
-          if (addedDocTitles.has(cleanTitle)) {
-            return; // 跳过这个文档
-          }
+          // 记录这个文档已经被添加，并存储引用编号
+          const referenceNumber = addedDocuments.size + 1;
+          addedDocuments.set(normalizedLink, referenceNumber);
           
-          // 如果是相同链接的文档，跳过它  
-          if (addedDocLinks.has(docLink)) {
-            return; // 跳过这个文档
-          }
-          
-          // 记录这个文档已经被添加
-          addedDocLinks.add(docLink);
-          addedDocTitles.set(cleanTitle, index + 1);
-          
-          // 添加到引用列表 - 确保引用编号是连续的
-          const referenceNumber = addedDocTitles.size;
-          responseText += `[${referenceNumber}] [${cleanTitle}](${docLink})\n`;
+          // 添加到引用列表
+          responseText += `[${referenceNumber}] [${cleanTitle}](${source.link})\n`;
         });
       }
       
-      // 跟踪总引用计数，确保Web引用的编号与文档引用连续
+      // 获取已添加的文档引用数量
       let referenceCounter = documentSources.length > 0 ? 
-                            (new Set(documentSources.map(s => s.title))).size : 0;
+                            new Map(documentSources.map(s => 
+                              [s.link.replace(/^https?:\/\/(www\.)?/, '').toLowerCase(), true]
+                            )).size : 0;
       
-      // 再添加Web Search引用 - 使用英文
+      // 改进Web Search引用处理
       if (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0) {
+        // 提取web引用并改进URL处理
         let webReferences = groundingData.groundingChunks
           .filter(chunk => chunk.web && chunk.web.uri)
           .map(chunk => {
-            // 修复grounding链接，移除中间代理URL
+            // 修复和标准化grounding链接
             let uri = chunk.web?.uri || "";
+            let title = chunk.web?.title || "Web Reference";
             
-            // 如果是Vertex AI Search的重定向链接，提取实际目标URL
+            // 处理Google Vertex AI Search的代理链接
             if (uri.includes('vertexaisearch.cloud.google.com/grounding-api-redirect')) {
-              // 尝试从URL中提取实际域名
-              const domainMatch = uri.match(/\/(www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
-              if (domainMatch && domainMatch[1]) {
-                // 使用提取的域名构建更简洁的URL
-                uri = `https://${domainMatch[1]}`;
-              } else {
-                // 尝试另一种格式提取域名
-                const altDomainMatch = uri.match(/\/([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
-                if (altDomainMatch && altDomainMatch[1]) {
-                  uri = `https://${altDomainMatch[1]}`;
+              // 更精确地提取目标URL
+              try {
+                // 尝试构建URL对象并提取url参数
+                const urlObj = new URL(uri);
+                const urlParam = urlObj.searchParams.get('url');
+                
+                if (urlParam) {
+                  // 如果有URL参数，直接使用
+                  uri = urlParam;
+                  
+                  // 进一步尝试解码嵌套URL（有时URL会被多重编码）
+                  try {
+                    const decodedUrl = decodeURIComponent(uri);
+                    if (decodedUrl !== uri && decodedUrl.startsWith('http')) {
+                      uri = decodedUrl;
+                    }
+                  } catch (decodeError) {
+                    // 解码失败，保持原样
+                    console.warn("Failed to decode nested URL:", decodeError);
+                  }
+                } else {
+                  // 否则尝试从路径中提取域名
+                  const domainMatch = uri.match(/\/(www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
+                  if (domainMatch && domainMatch[1]) {
+                    uri = `https://${domainMatch[1]}`;
+                  } else {
+                    // 尝试另一种格式提取域名
+                    const altDomainMatch = uri.match(/\/([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
+                    if (altDomainMatch && altDomainMatch[1]) {
+                      uri = `https://${altDomainMatch[1]}`;
+                    }
+                  }
+                }
+              } catch (urlError) {
+                // URL解析失败，回退到正则表达式方法
+                console.warn("Failed to parse redirect URL:", urlError);
+                
+                // 尝试从路径中提取域名
+                const domainMatch = uri.match(/\/(www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
+                if (domainMatch && domainMatch[1]) {
+                  uri = `https://${domainMatch[1]}`;
+                } else {
+                  // 尝试另一种格式提取域名
+                  const altDomainMatch = uri.match(/\/([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
+                  if (altDomainMatch && altDomainMatch[1]) {
+                    uri = `https://${altDomainMatch[1]}`;
+                  }
                 }
               }
             }
             
+            // 清理和规范化标题
+            if (title) {
+              // 移除过长标题中的噪音内容
+              if (title.length > 70) {
+                title = title.substring(0, 67) + '...';
+              }
+              
+              // 移除标题中可能的HTML元素
+              title = title.replace(/<[^>]*>/g, '');
+            }
+            
             return {
-              title: chunk.web?.title || "Web Reference",
+              title: title,
               uri: uri,
             };
           });
           
-        // 去重，避免重复的引用
-        const uniqueUrls = new Set<string>();
-        webReferences = webReferences.filter(ref => {
-          // 规范化URL以便更好地去重
-          const normalizedUrl = ref.uri.replace(/^https?:\/\/(www\.)?/, '');
+        // 使用Map进行更高效的去重，以URL为键
+        const uniqueUrls = new Map();
+        webReferences.forEach(ref => {
+          // 标准化URL
+          const normalizedUrl = ref.uri.replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
           
+          // 只保留每个URL的第一个引用
           if (!uniqueUrls.has(normalizedUrl)) {
-            uniqueUrls.add(normalizedUrl);
-            return true;
+            uniqueUrls.set(normalizedUrl, ref);
           }
-          return false;
         });
+        
+        // 从Map转换回数组
+        webReferences = Array.from(uniqueUrls.values());
         
         if (webReferences.length > 0) {
           responseText += "\n#### Web Resources\n";
@@ -545,7 +679,7 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
         }
       }
       
-      // 添加搜索建议 - 使用英文
+      // 改进搜索建议的处理和显示
       if (groundingData && groundingData.webSearchQueries && groundingData.webSearchQueries.length > 0) {
         // 过滤和去重搜索建议
         const uniqueQueries = [...new Set(groundingData.webSearchQueries
@@ -556,12 +690,15 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
         if (uniqueQueries.length > 0) {
           responseText += "\n### Related Search Topics\n";
           uniqueQueries.forEach(query => {
-            responseText += `- ${query}\n`;
+            // 确保查询内容是有意义的
+            if (query.length > 3 && !query.includes("undefined")) {
+              responseText += `- ${query}\n`;
+            }
           });
         }
       }
       
-      // 添加归因信息 - 使用纯Markdown格式
+      // 改进归因信息的显示格式
       responseText += "\n\n*Information sourced from BIAN Architecture documents and web resources*";
     }
 

@@ -293,51 +293,51 @@ export default function Page() {
         </div>
         
         <div className="prose dark:prose-invert max-w-none">
-          <h3>产品概述</h3>
+          <h3>Product Overview</h3>
           <p>
-            AI_BIAN是一个基于Next.js 14开发的智能问答系统，专门针对BIAN（Banking Industry Architecture Network）框架提供专业解答。
-            系统采用RAG（Retrieval-Augmented Generation）技术，结合Gemini Pro大语言模型，为用户提供准确、全面的BIAN相关知识。
+            AI_BIAN is an intelligent Q&A system built with Next.js 14, specifically designed to provide professional answers about the BIAN (Banking Industry Architecture Network) framework.
+            The system uses RAG (Retrieval-Augmented Generation) technology combined with the Gemini Pro large language model to provide accurate and comprehensive BIAN-related knowledge.
           </p>
           
-          <h3>核心功能</h3>
+          <h3>Core Features</h3>
           <ul>
-            <li><strong>智能问答</strong>：针对BIAN框架的专业问题提供准确回答</li>
-            <li><strong>查询改写</strong>：将用户自然语言问题转换为BIAN专业查询</li>
-            <li><strong>文档检索</strong>：从BIAN知识库中检索相关文档片段</li>
-            <li><strong>综合响应</strong>：结合RAG结果和Gemini知识生成完整答案</li>
-            <li><strong>流式响应</strong>：实时显示生成过程，提升用户体验</li>
+            <li><strong>Intelligent Q&A</strong>: Provides accurate answers to professional questions about the BIAN framework</li>
+            <li><strong>Query Rewriting</strong>: Transforms user's natural language questions into BIAN-specific professional queries</li>
+            <li><strong>Document Retrieval</strong>: Retrieves relevant document excerpts from the BIAN knowledge base</li>
+            <li><strong>Comprehensive Responses</strong>: Generates complete answers by combining RAG results with Gemini's knowledge</li>
+            <li><strong>Streaming Response</strong>: Displays generation process in real-time for improved user experience</li>
           </ul>
           
-          <h3>技术栈</h3>
+          <h3>Technology Stack</h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse my-4">
               <thead>
                 <tr className="border-b border-gray-300 dark:border-gray-700">
-                  <th className="p-2 text-left font-semibold">组件</th>
-                  <th className="p-2 text-left font-semibold">技术</th>
-                  <th className="p-2 text-left font-semibold">用途</th>
+                  <th className="p-2 text-left font-semibold">Component</th>
+                  <th className="p-2 text-left font-semibold">Technology</th>
+                  <th className="p-2 text-left font-semibold">Purpose</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <td className="p-2">前端</td>
+                  <td className="p-2">Frontend</td>
                   <td className="p-2">Next.js 14 (App Router)</td>
-                  <td className="p-2">用户界面和交互</td>
+                  <td className="p-2">User interface and interactions</td>
                 </tr>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <td className="p-2">部署</td>
+                  <td className="p-2">Deployment</td>
                   <td className="p-2">Railway</td>
-                  <td className="p-2">应用托管和扩展</td>
+                  <td className="p-2">Application hosting and scaling</td>
                 </tr>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <td className="p-2">向量检索</td>
+                  <td className="p-2">Vector Retrieval</td>
                   <td className="p-2">Vectorize.io</td>
-                  <td className="p-2">BIAN文档检索</td>
+                  <td className="p-2">BIAN document retrieval</td>
                 </tr>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <td className="p-2">大语言模型</td>
+                  <td className="p-2">Large Language Model</td>
                   <td className="p-2">Google Gemini Pro</td>
-                  <td className="p-2">查询改写和答案生成</td>
+                  <td className="p-2">Query rewriting and answer generation</td>
                 </tr>
               </tbody>
             </table>
