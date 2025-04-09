@@ -71,9 +71,9 @@ export async function POST(req: Request) {
 
     // Create Google Generative AI client
     const genAI = new GoogleGenerativeAI(requiredApiKey);
-    // 更新为Gemini 2.5 Flash模型并启用Web Grounding
+    // 更新为使用环境变量定义的模型并启用Web Grounding
     const generativeModel = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",  // 使用2.5 Flash模型，更快且支持网络搜索
+      model: model,  // 使用环境变量中的MODEL值
       generationConfig: {
         temperature: 0.7,
       },
@@ -176,7 +176,7 @@ Output only the rewritten English query string.
 
     // Final Answer Generation: Generate comprehensive answer
     // 添加日志记录，用于调试
-    console.log("Starting request to Gemini 2.5 with Web Grounding...");
+    console.log(`Starting request to ${model} with Web Grounding...`);
 
     let formattedDocuments = "";
     let documentSources: {title: string, link: string}[] = [];
@@ -230,9 +230,9 @@ ${formattedDocuments}
 `;
 
     // Generate the final answer
-    console.log("Sending prompt to Gemini API with Web Grounding enabled...");
+    console.log(`Sending prompt to ${model} API with Web Grounding enabled...`);
     const result = await generativeModel.generateContent(finalAnswerPrompt);
-    console.log("Received response from Gemini API");
+    console.log(`Received response from ${model} API`);
     
     // 提取响应文本和Web Grounding信息
     let responseText = "";
@@ -262,7 +262,7 @@ ${formattedDocuments}
         }
         
       } else if (typeof result.response.text === "function") {
-        console.log("Attempting to extract text using response.text()");
+        console.log(`Attempting to extract text using response.text() from ${model}`);
         responseText = result.response.text();
       } else if (typeof result.response === "string") {
         responseText = result.response;
@@ -270,7 +270,7 @@ ${formattedDocuments}
         console.error("Unexpected response format, cannot extract text:", result.response);
         return new Response(
           JSON.stringify({
-            error: "Invalid response format from Gemini API."
+            error: `Invalid response format from ${model} API.`
           }),
           { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
@@ -279,7 +279,7 @@ ${formattedDocuments}
       console.error("Invalid or missing response object from Gemini API:", result);
       return new Response(
         JSON.stringify({
-          error: "Invalid response structure from Gemini API."
+          error: `Invalid response structure from ${model} API.`
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
