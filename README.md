@@ -15,7 +15,7 @@ graph TD
     B --> C{Railway Service / 服务}
     C --> D[Query Rewriting / 查询改写]
     D --> E[Vectorize.io RAG]
-    D --> F[Gemini Pro (with Web Search)]
+    D --> F[Gemini Pro with Web Search]
     E --> G[Response Generation / 综合响应生成]
     F --> G
     G --> B
@@ -31,7 +31,7 @@ sequenceDiagram
     participant R as Railway Service / 服务
     participant Q as Query Rewriting (Gemini) / 查询改写
     participant V as Vectorize RAG
-    participant G as Gemini Pro (with Web Search)
+    participant G as Gemini Pro with Web Search
 
     U->>F: Input BIAN question / Click placeholder / 输入问题或点击预制问题
     F->>R: POST /api/chat
@@ -40,10 +40,10 @@ sequenceDiagram
     G-->>Q: Standard BIAN query / 标准BIAN查询
     Q->>V: Retrieve relevant documents / 检索相关文档
     V-->>R: Relevant document chunks / 相关文档片段
-    R->>G: Generate comprehensive response (Docs + Web Search) / 综合响应生成
+    R->>G: Generate comprehensive response Docs + Web Search / 综合响应生成
     G-->>R: Complete answer + Citation metadata / 完整答案 + 引用元数据
-    R->>F: Streaming response (Format citations) / 流式响应 (处理引用)
-    F->>U: Display result (Citations without links) / 显示结果 (无链接引用)
+    R->>F: Streaming response Format citations / 流式响应 处理引用
+    F->>U: Display result Citations without links / 显示结果 无链接引用
 ```
 
 ## Technology Stack / 技术栈
