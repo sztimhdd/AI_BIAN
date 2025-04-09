@@ -30,17 +30,17 @@ const allPlaceholderOptions: PlaceholderOption[] = [
   { emoji: "🚀", text: "What is the roadmap for BIAN's future development, and how will it impact our implementation?" },
   { emoji: "🔗", text: "How does BIAN support open banking initiatives and the development of APIs for financial services?" },
   { emoji: "🌐", text: "What kind of community support and resources are available to BIAN members?" },
-  // New 10 questions added by user
-  { emoji: "🔗", text: "How would you explain the relationship between BIAN's Business Capabilities, Service Domains, and Business Objects, and provide an example of mapping a specific banking process, like loan origination, to these components?" },
-  { emoji: "🔍", text: "What steps would you take to assess our current architecture and map it to the BIAN Service Landscape, particularly identifying gaps in our service domains?" },
-  { emoji: "🧩", text: "Can you describe a scenario where you've integrated BIAN with another enterprise architecture framework, such as TOGAF, and how you resolved conflicts between their terminologies and structures?" },
-  { emoji: "💻", text: "How would you approach designing a Semantic API for a core banking function using BIAN's guidelines, and what challenges might arise in ensuring interoperability with legacy systems?" },
-  { emoji: "📊", text: "What strategies would you use to prioritize the adoption of BIAN service domains in our institution, considering factors like cost, regulatory compliance, and business value?" },
-  { emoji: "🏦", text: "Can you walk us through a real-world example where you've implemented BIAN to streamline a financial institution's operations, including the tools and methodologies you used?" },
-  { emoji: "📐", text: "How does BIAN's metamodel, expressed in UML, support the design of our banking services, and what practical benefits have you seen from applying it in past projects?" },
-  { emoji: "🌐", text: "What role does BIAN play in supporting open banking and API ecosystems, and how would you leverage it to position our institution competitively in this space?" },
-  { emoji: "🎓", text: "How would you train our team on BIAN's architecture and ensure they can maintain it post-implementation, including any specific certification paths you'd recommend?" },
-  { emoji: "📈", text: "What are the key considerations for evolving our BIAN-based architecture over time, especially in response to emerging trends like digital transformation or changes in the BIAN Service Landscape?" },
+  // Rewritten 10 questions based on user feedback
+  { emoji: "🔗", text: "Relationship between BIAN Business Capabilities, Service Domains, Business Objects, and mapping example for loan origination?" },
+  { emoji: "🔍", text: "Steps to assess current architecture, map to BIAN Service Landscape, and identify service domain gaps?" },
+  { emoji: "🧩", text: "Describe integrating BIAN with TOGAF, focusing on resolving terminology and structural conflicts." },
+  { emoji: "💻", text: "Approach for designing a BIAN-compliant Semantic API for core banking? Potential legacy system interoperability challenges?" },
+  { emoji: "📊", text: "Strategies to prioritize BIAN service domain adoption based on cost, compliance, and business value?" },
+  { emoji: "🏦", text: "Example of BIAN implementation streamlining financial institution operations, including tools and methodologies?" },
+  { emoji: "📐", text: "How does the BIAN UML metamodel support banking service design? What are its practical benefits?" },
+  { emoji: "🌐", text: "BIAN's role in open banking/API ecosystems? How to leverage it for competitive positioning?" },
+  { emoji: "🎓", text: "Training approaches for BIAN architecture and post-implementation maintenance? Recommended certifications?" },
+  { emoji: "📈", text: "Key considerations for evolving BIAN architecture over time, considering digital transformation and landscape changes?" },
 ];
 
 // Function to get N random items from an array
