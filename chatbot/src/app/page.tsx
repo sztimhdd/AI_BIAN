@@ -431,11 +431,7 @@ export default function Page() {
                 <div className="flex-1 min-w-0 overflow-hidden">
                   <div className="prose prose-blue dark:prose-invert max-w-none">
                     <div
-                      className="[&>table]:w-full [&>table]:border-collapse [&>table]:my-4 
-                             [&>table>thead>tr]:border-b [&>table>thead>tr]:border-gray-300 dark:[&>table>thead>tr]:border-gray-700 
-                             [&>table>tbody>tr]:border-b [&>table>tbody>tr]:border-gray-200 dark:[&>table>tbody>tr]:border-gray-800 
-                             [&>table>*>tr>*]:p-2 [&>table>*>tr>*]:text-left 
-                             [&>table>thead>tr>*]:font-semibold [&>table>tbody>tr>*]:align-top"
+                      className={`[&>table]:w-full [&>table]:border-collapse [&>table]:my-4 [&>table>thead>tr]:border-b [&>table>thead>tr]:border-gray-300 dark:[&>table>thead>tr]:border-gray-700 [&>table>tbody>tr]:border-b [&>table>tbody>tr]:border-gray-200 dark:[&>table>tbody>tr]:border-gray-800 [&>table>*>tr>*]:p-2 [&>table>*>tr>*]:text-left [&>table>thead>tr>*]:font-semibold [&>table>tbody>tr>*]:align-top`}
                     >
                       <Markdown
                         remarkPlugins={[remarkGfm]}
