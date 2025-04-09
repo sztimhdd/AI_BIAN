@@ -4,7 +4,7 @@ import { Message, useChat } from "@ai-sdk/react";
 import Markdown from "react-markdown";
 import { useState, useRef, useEffect } from "react";
 import remarkGfm from "remark-gfm";
-import { AlertCircle, ChevronDown, Trash2, RefreshCw, XCircle, Moon, Sun, Send, Menu, X, Info, ExternalLink, MessageSquare, Zap } from "lucide-react";
+import { AlertCircle, ChevronDown, Trash2, RefreshCw, XCircle, Moon, Sun, Send, Menu, X, Info, ExternalLink, MessageSquare, Zap, Map, Globe } from "lucide-react";
 
 interface PlaceholderOption {
   emoji: string;
@@ -342,7 +342,7 @@ export default function Page() {
           </div>
           
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-            <p>© 2024 BIAN AI Assistant. All rights reserved.</p>
+            <p>© 2025 BIAN AI Assistant. All rights reserved.</p>
           </div>
         </div>
       </div>
@@ -361,8 +361,9 @@ export default function Page() {
                   onClick={resetToHome}
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
                 >
-                  <div className="bg-blue-600 text-white p-2.5 rounded-lg flex items-center justify-center w-10 h-10">
-                    <span className="font-bold text-xs leading-none">BIAN</span>
+                  <div className="relative bg-blue-600 text-white p-2 rounded-lg flex items-center justify-center w-10 h-10">
+                    <MessageSquare className="w-6 h-6" />
+                    <span className="absolute inset-0 flex items-center justify-center font-bold text-xs leading-none tracking-tighter">BIAN</span>
                   </div>
                   <span className="font-semibold text-xl">BIAN <span className="text-blue-600">AI</span> Assistant</span>
                 </button>
@@ -536,6 +537,14 @@ export default function Page() {
                     <MessageSquare className="w-4 h-4" />
                     <span>Natural conversation interface</span>
                   </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
+                    <Map className="w-4 h-4" />
+                    <span>Based on BIAN 12.0 Service Landscape</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
+                    <Globe className="w-4 h-4" />
+                    <span>Up-to-date with Web Search Augmentation</span>
+                  </div>
                 </div>
               </div>
               <div className="mt-8">
@@ -570,7 +579,7 @@ export default function Page() {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                      This assistant is trained on BIAN's extensive knowledge base and can provide detailed answers about banking architecture standards.
+                      The underlying RAG knowledge base of this assistant is trained on BIAN 12.0 Service Landscape, BIAN Book 2nd Edition, and Web Search augmentation.
                     </p>
                   </div>
                 </div>
