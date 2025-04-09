@@ -262,38 +262,122 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
     let groundingData: GroundingMetadata | null = null;
 
     if (result && result.response) {
-      if (result.response.candidates && result.response.candidates.length > 0) {
-        const candidate = result.response.candidates[0];
-        
-        // 提取响应文本
-        responseText = candidate?.content?.parts[0]?.text ?? '';
-        if (!responseText) {
-          console.warn("Extracted empty responseText from Gemini result candidates.");
-        }
-        
-        // 提取Web Grounding元数据
-        if (candidate?.groundingMetadata) {
-          groundingData = {
-            searchEntryPoint: candidate.groundingMetadata.searchEntryPoint,
-            groundingChunks: candidate.groundingMetadata.groundingChunks,
-            groundingSupports: candidate.groundingMetadata.groundingSupports,
-            webSearchQueries: candidate.groundingMetadata.webSearchQueries,
-          };
-          console.log("Extracted grounding metadata:", JSON.stringify(groundingData, null, 2).substring(0, 200) + "...");
+      try {
+        if (result.response.candidates && result.response.candidates.length > 0) {
+          const candidate = result.response.candidates[0];
+          
+          // 提取响应文本 - 改进提取方法
+          if (candidate?.content?.parts?.length > 0) {
+            // 合并所有文本部分，确保不会漏掉任何内容
+            responseText = candidate.content.parts
+              .map(part => {
+                // 使用类型断言处理未知类型
+                try {
+                  const anyPart = part as any;
+                  if (typeof anyPart.text === 'string') {
+                    return anyPart.text;
+                  } else if (anyPart.text && typeof anyPart.text === 'object' && typeof anyPart.text.toString === 'function') {
+                    return anyPart.text.toString();
+                  }
+                } catch (e) {
+                  console.warn("Error accessing part.text:", e);
+                }
+                return '';
+              })
+              .filter(text => text)
+              .join('\n');
+          }
+          
+          // 数据验证：检查响应文本是否为空
+          if (!responseText || responseText.trim() === '') {
+            console.warn("Empty responseText extracted from Gemini API parts");
+            
+            // 尝试其他方法获取文本 - 使用类型断言
+            try {
+              const anyContent = candidate.content as any;
+              if (anyContent && typeof anyContent.text === 'function') {
+                try {
+                  responseText = anyContent.text();
+                  console.log("Extracted text using content.text() function, length:", responseText.length);
+                } catch (textFuncError) {
+                  console.error("Error using content.text() function:", textFuncError);
+                }
+              }
+            } catch (e) {
+              console.warn("Error accessing content.text:", e);
+            }
+            
+            try {
+              const anyCandidate = candidate as any;
+              if (anyCandidate && typeof anyCandidate.text === 'function') {
+                try {
+                  responseText = anyCandidate.text();
+                  console.log("Extracted text using candidate.text() function, length:", responseText.length);
+                } catch (candidateTextError) {
+                  console.error("Error using candidate.text() function:", candidateTextError);
+                }
+              }
+            } catch (e) {
+              console.warn("Error accessing candidate.text:", e);
+            }
+          } else {
+            // 记录接收到的原始响应（截断显示）
+            console.log(`Extracted response from parts, length: ${responseText.length}`);
+            console.log("Raw response from Gemini (first 200 chars):", responseText.substring(0, 200));
+          }
+          
+          // 提取Web Grounding元数据
+          if (candidate?.groundingMetadata) {
+            groundingData = {
+              searchEntryPoint: candidate.groundingMetadata.searchEntryPoint,
+              groundingChunks: candidate.groundingMetadata.groundingChunks,
+              groundingSupports: candidate.groundingMetadata.groundingSupports,
+              webSearchQueries: candidate.groundingMetadata.webSearchQueries,
+            };
+            console.log("Extracted grounding metadata:", JSON.stringify(groundingData, null, 2).substring(0, 200) + "...");
+          } else {
+            console.log("No grounding metadata available in the response.");
+          }
+          
+        } else if (result.response.text && typeof result.response.text === "function") {
+          // 直接从response获取文本
+          try {
+            console.log(`Attempting to extract text using response.text() from ${model}`);
+            responseText = result.response.text();
+            // 记录通过text()方法获取的响应（截断显示）
+            console.log("Response via text() method (first 200 chars):", responseText.substring(0, 200));
+          } catch (textFunctionError) {
+            console.error("Error calling response.text() function:", textFunctionError);
+            
+            // 作为备用，尝试toString()
+            if (result.response.toString) {
+              try {
+                responseText = result.response.toString();
+                console.log("Extracted text using toString() method, length:", responseText.length);
+              } catch (toStringError) {
+                console.error("Error using toString() method:", toStringError);
+              }
+            }
+          }
+        } else if (typeof result.response === "string") {
+          responseText = result.response;
+          // 记录字符串形式的响应（截断显示）
+          console.log("String response (first 200 chars):", responseText.substring(0, 200));
         } else {
-          console.log("No grounding metadata available in the response.");
+          // 最后尝试使用JSON.stringify
+          try {
+            responseText = JSON.stringify(result.response);
+            console.log("Extracted text by stringifying response object, length:", responseText.length);
+          } catch (stringifyError) {
+            console.error("Error stringifying response:", stringifyError);
+            throw new Error("Cannot extract text from response in any way");
+          }
         }
-        
-      } else if (typeof result.response.text === "function") {
-        console.log(`Attempting to extract text using response.text() from ${model}`);
-        responseText = result.response.text();
-      } else if (typeof result.response === "string") {
-        responseText = result.response;
-      } else {
-        console.error("Unexpected response format, cannot extract text:", result.response);
+      } catch (extractionError: unknown) {
+        console.error("Error extracting text from Gemini response:", extractionError);
         return new Response(
           JSON.stringify({
-            error: `Invalid response format from ${model} API.`
+            error: `Failed to extract text from ${model} API response: ${extractionError instanceof Error ? extractionError.message : 'Unknown error'}`
           }),
           { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
@@ -308,11 +392,31 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       );
     }
 
+    // 确保我们有有效的响应文本
+    if (!responseText || responseText.trim() === "") {
+      console.error("All extraction methods failed, no valid text extracted from API response");
+      return new Response(
+        JSON.stringify({
+          error: "Failed to extract any valid content from model response."
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 保存原始响应文本，用于最后检查
+    const originalResponseText = responseText;
+    console.log("Original response length:", originalResponseText.length);
+
     // 处理引用信息，添加到响应文本 - 修改为英文输出
     if (documentSources.length > 0 || (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0)) {
+      // 添加分隔符和引用标题前，确保有足够的空行
+      if (!responseText.endsWith("\n\n")) {
+        // 如果文本不以两个换行符结束，添加额外的换行符
+        responseText += responseText.endsWith("\n") ? "\n" : "\n\n";
+      }
       
       // 添加引用信息到响应 - 使用英文
-      responseText += "\n\n---\n### References\n";
+      responseText += "---\n### References\n";
       
       // 首先添加RAG文档引用 - 使用英文
       if (documentSources.length > 0) {
@@ -368,21 +472,22 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       responseText += "\n<small>*Information sourced from BIAN Architecture documents and web resources*</small>";
     }
 
-    // 添加分析数据，仅在响应文本中包含引用标记的情况下
-    if (groundingData && groundingData.groundingSupports && groundingData.groundingSupports.length > 0) {
-      console.log("Grounding supports available:", groundingData.groundingSupports.length);
-      
-      // 这部分只是记录在日志中，不添加到响应 - 使用安全的方式访问数据
-      try {
-        // 仅记录支持数据的存在，避免深入访问可能不存在的属性
-        console.log(`First support data sample: ${JSON.stringify(groundingData.groundingSupports[0]).substring(0, 100)}...`);
-      } catch (e) {
-        console.error("Error logging grounding support data:", e);
-      }
+    // 检查是否发生了内容丢失（通过比较原始响应和最终响应的长度）
+    const originalLength = originalResponseText.length;
+    const finalLength = responseText.length;
+    
+    console.log(`Response length check: Original=${originalLength}, Final=${finalLength}, Ratio=${finalLength/originalLength}`);
+    
+    if (originalLength > 100 && finalLength > originalLength * 1.1) {
+      console.log("Response appears to have references successfully appended");
+    } else if (originalLength > 100 && finalLength < originalLength * 1.1) {
+      console.warn("Possible content loss detected - final response not significantly longer than original");
     }
 
-    // Add log before creating stream
-    console.log("Response text extracted:", responseText ? responseText.substring(0, 100) + "..." : "EMPTY");
+    // Add logging for debugging
+    console.log("Final response text length:", responseText.length);
+    console.log("Response text first 100 chars:", responseText.substring(0, 100));
+    console.log("Response text last 100 chars:", responseText.substring(responseText.length - 100));
 
     // 优化流式响应处理
     if (!responseText || responseText.trim() === "") {
@@ -399,23 +504,30 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
     const readableStream = new ReadableStream({
       start(controller) {
         try {
-          // 第一步：确保响应文本正确格式化和转义
-          // - 去除可能导致JSON解析错误的特殊字符
-          // - 替换双引号前的反斜杠，避免双重转义
-          const formattedText = responseText
-            .replace(/\\/g, '\\\\')  // 先转义所有反斜杠
-            .replace(/"/g, '\\"');   // 再转义所有双引号
+          // 为流式传输准备响应文本
+          // 以更稳健的方式格式化和转义文本
           
-          // 包含完整的响应文本
-          const formattedChunk = `0:"${formattedText}"\n`; // Format as 0:"<escaped-text>"\n
+          // 1. 使用JSON.stringify来正确处理所有特殊字符
+          const serialized = JSON.stringify(responseText);
+          
+          // 2. 移除JSON.stringify添加的双引号
+          const content = serialized.slice(1, -1);
+          
+          // 3. 构建符合AI SDK格式的chunk
+          const formattedChunk = `0:"${content}"\n`;
+          
+          // 记录发送的数据大小
+          console.log(`Sending response chunk of size: ${formattedChunk.length} bytes`);
+          
+          // 发送数据
           controller.enqueue(new TextEncoder().encode(formattedChunk));
           
-          // 如果有搜索元数据，可以添加到流中作为单独的消息
+          // 如果有搜索元数据，记录但不添加到流中
           if (groundingData && groundingData.searchEntryPoint && groundingData.searchEntryPoint.renderedContent) {
-            // 这里只记录，不添加到流中，前端处理稍后实现
             console.log("Search entry point data is available for frontend rendering");
           }
           
+          // 关闭流
           controller.close();
         } catch (streamError) {
           console.error("Error during stream creation:", streamError);
