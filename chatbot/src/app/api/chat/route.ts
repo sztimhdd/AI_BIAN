@@ -148,7 +148,7 @@ Output only the rewritten English query string.
         const rewriteText = rewriteResult.response.text();
         if (rewriteText && rewriteText.trim()) {
           rewrittenQuery = rewriteText.trim();
-          console.log(`Rewritten query: "${rewrittenQuery}"`);
+          console.log(`Rewritten query for RAG: "${rewrittenQuery}"`);
         } else {
           console.warn("Received empty rewritten query, falling back to original question");
         }
@@ -184,9 +184,30 @@ Output only the rewritten English query string.
     if (context && context.documents) {
       // 保存文档源信息以便后续添加引用
       documentSources = context.documents.map((doc, index) => {
+        // 简化文档链接提取逻辑
+        let docLink;
+        
+        // 检查文档对象中是否有直接的URL字段
+        if (doc.source_url || doc.url || doc.link || doc.document_url) {
+          docLink = doc.source_url || doc.url || doc.link || doc.document_url;
+        } 
+        // 检查元数据中是否有URL相关字段
+        else if (doc.metadata && (doc.metadata.url || doc.metadata.source_url || doc.metadata.link)) {
+          docLink = doc.metadata.url || doc.metadata.source_url || doc.metadata.link;
+        } 
+        // 使用更规范的默认链接格式
+        else {
+          // 使用文档标识符构建一致的链接格式
+          const docIdentifier = doc.source_display_name || doc.filename || `document-${index+1}`;
+          docLink = `https://bian.org/servicelandscape/reference/${encodeURIComponent(docIdentifier)}`;
+        }
+        
+        // 简化文档标题提取逻辑
+        const docTitle = doc.source_display_name || doc.filename || `BIAN Document ${index + 1}`;
+        
         return {
-          title: doc.source_display_name || doc.filename,
-          link: `https://example.com/${encodeURIComponent(doc.source_display_name || doc.filename)}`
+          title: docTitle,
+          link: docLink
         };
       });
       
@@ -200,33 +221,35 @@ Output only the rewritten English query string.
     // Prepare the final answer generation prompt
     const finalAnswerPrompt = `
 # ROLE
-你是一位精通BIAN(银行业架构网络)的专家助手，擅长解释银行架构和金融技术标准。
+You are an expert BIAN (Banking Industry Architecture Network) specialist with deep knowledge of banking architectures and financial technology standards.
 
 # TASK
-为用户提供关于BIAN的全面、准确和专业的回答，涵盖BIAN框架、服务领域、实施方法等方面。
+Provide a comprehensive, accurate, and professional answer about BIAN, covering frameworks, service domains, implementation methods, and related aspects.
 
 # REQUIREMENTS
-- 综合使用以下信息来源:
-  1. 你的内部BIAN知识库
-  2. 提供的文档摘录
-  3. 通过Google搜索获取的最新信息
-- 优先考虑准确性和专业性
-- 适当引用相关信息来源以增强回答可信度
-- 使用清晰、专业的语言
-- 回答中使用简体中文
-- 如果不确定或需要更多信息，请使用网络搜索查找答案
-- 结构化你的回答，使用标题、列表或表格提高可读性
+- Synthesize information from:
+  1. Your internal BIAN knowledge base
+  2. The provided document excerpts 
+  3. Latest information obtained through Google search
+- Prioritize accuracy and professionalism
+- Always use proper citations when referencing information:
+  - For BIAN documents: use [Doc#] format
+  - For web references: use appropriate citations
+- Structure your answer with clear headings, lists, and tables for improved readability
+- Include relevant examples where appropriate
+- Provide a concise but comprehensive answer in English
+- Use web search to find answers if you're uncertain or need more information
 
 # INPUT
-用户原始问题: "${originalUserQuestion}"
+User's Original Question: "${originalUserQuestion}"
 
-提供的文档摘录:
+Provided Document Excerpts:
 <chunks>
 ${formattedDocuments}
 </chunks>
 
 # OUTPUT
-生成一个全面、权威的BIAN相关回答，适当引用可靠来源。需要时可使用网络搜索获取最新信息。
+Generate a comprehensive and authoritative BIAN-related answer, with appropriate citations to reliable sources. Use web search for additional information when needed.
 `;
 
     // Generate the final answer
@@ -285,41 +308,64 @@ ${formattedDocuments}
       );
     }
 
-    // 处理引用信息，添加到响应文本
+    // 处理引用信息，添加到响应文本 - 修改为英文输出
     if (documentSources.length > 0 || (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0)) {
       
-      // 添加引用信息到响应
-      responseText += "\n\n---\n### 参考资料\n";
+      // 添加引用信息到响应 - 使用英文
+      responseText += "\n\n---\n### References\n";
       
-      // 首先添加RAG文档引用
+      // 首先添加RAG文档引用 - 使用英文
       if (documentSources.length > 0) {
+        responseText += "\n#### BIAN Knowledge Base Documents\n";
         documentSources.forEach((source, index) => {
-          responseText += `[BIAN ${index + 1}] [${source.title}](${source.link})\n`;
+          // 提取文档真实名称，移除可能的路径或扩展名
+          const cleanTitle = source.title
+            .replace(/\.[^/.]+$/, "") // 移除文件扩展名
+            .split('/').pop() || // 从路径中提取文件名
+            `BIAN Document ${index + 1}`;
+            
+          responseText += `[${index + 1}] [${cleanTitle}](${source.link})\n`;
         });
       }
       
-      // 再添加Web Search引用
-      if (groundingData && groundingData.groundingChunks) {
-        groundingData.groundingChunks.forEach((chunk, index) => {
-          if (chunk.web && chunk.web.uri) {
-            const title = chunk.web.title || "参考链接";
-            responseText += `[Web ${index + 1}] [${title}](${chunk.web.uri})\n`;
+      // 再添加Web Search引用 - 使用英文
+      if (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0) {
+        let webReferences = groundingData.groundingChunks
+          .filter(chunk => chunk.web && chunk.web.uri)
+          .map((chunk, index) => ({
+            title: chunk.web?.title || "Web Reference",
+            uri: chunk.web?.uri || "",
+          }));
+          
+        // 去重，避免重复的引用
+        const uniqueUrls = new Set();
+        webReferences = webReferences.filter(ref => {
+          if (!uniqueUrls.has(ref.uri)) {
+            uniqueUrls.add(ref.uri);
+            return true;
           }
+          return false;
         });
+        
+        if (webReferences.length > 0) {
+          responseText += "\n#### Web Resources\n";
+          webReferences.forEach((ref, index) => {
+            responseText += `[${index + 1}] [${ref.title}](${ref.uri})\n`;
+          });
+        }
       }
       
-      // 添加搜索建议
+      // 添加搜索建议 - 使用英文
       if (groundingData && groundingData.webSearchQueries && groundingData.webSearchQueries.length > 0) {
-        responseText += "\n### 延伸搜索\n";
-        groundingData.webSearchQueries.forEach(query => {
+        responseText += "\n### Related Search Topics\n";
+        const uniqueQueries = [...new Set(groundingData.webSearchQueries)]; // 去重
+        uniqueQueries.forEach(query => {
           responseText += `- ${query}\n`;
         });
       }
       
-      // 添加归因信息
-      if ((groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0) || documentSources.length > 0) {
-        responseText += "\n<small>*部分信息来自BIAN知识库和Web搜索结果</small>";
-      }
+      // 添加归因信息 - 使用英文
+      responseText += "\n<small>*Information sourced from BIAN Architecture documents and web resources*</small>";
     }
 
     // 添加分析数据，仅在响应文本中包含引用标记的情况下
@@ -338,20 +384,43 @@ ${formattedDocuments}
     // Add log before creating stream
     console.log("Response text extracted:", responseText ? responseText.substring(0, 100) + "..." : "EMPTY");
 
+    // 优化流式响应处理
+    if (!responseText || responseText.trim() === "") {
+      console.error("Empty response text detected, returning error");
+      return new Response(
+        JSON.stringify({
+          error: "Generated empty response from the model. Please try again."
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Streaming Response: Create a stream from the responseText
     const readableStream = new ReadableStream({
       start(controller) {
-        // 包含完整的响应文本
-        const formattedChunk = `0:"${JSON.stringify(responseText).slice(1, -1)}"\n`; // Format as 0:"<escaped-text>"\n
-        controller.enqueue(new TextEncoder().encode(formattedChunk));
-        
-        // 如果有搜索元数据，可以添加到流中作为单独的消息
-        if (groundingData && groundingData.searchEntryPoint && groundingData.searchEntryPoint.renderedContent) {
-          // 这里只记录，不添加到流中，前端处理稍后实现
-          console.log("Search entry point data is available for frontend rendering");
+        try {
+          // 第一步：确保响应文本正确格式化和转义
+          // - 去除可能导致JSON解析错误的特殊字符
+          // - 替换双引号前的反斜杠，避免双重转义
+          const formattedText = responseText
+            .replace(/\\/g, '\\\\')  // 先转义所有反斜杠
+            .replace(/"/g, '\\"');   // 再转义所有双引号
+          
+          // 包含完整的响应文本
+          const formattedChunk = `0:"${formattedText}"\n`; // Format as 0:"<escaped-text>"\n
+          controller.enqueue(new TextEncoder().encode(formattedChunk));
+          
+          // 如果有搜索元数据，可以添加到流中作为单独的消息
+          if (groundingData && groundingData.searchEntryPoint && groundingData.searchEntryPoint.renderedContent) {
+            // 这里只记录，不添加到流中，前端处理稍后实现
+            console.log("Search entry point data is available for frontend rendering");
+          }
+          
+          controller.close();
+        } catch (streamError) {
+          console.error("Error during stream creation:", streamError);
+          controller.error(streamError);
         }
-        
-        controller.close();
       }
     });
 
