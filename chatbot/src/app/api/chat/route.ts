@@ -564,8 +564,8 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
           const referenceNumber = addedDocuments.size + 1;
           addedDocuments.set(normalizedLink, referenceNumber);
           
-          // 添加到引用列表
-          responseText += `[${referenceNumber}] [${cleanTitle}](${source.link})\n`;
+          // 添加到引用列表 - 移除链接，只显示序号和标题
+          responseText += `[${referenceNumber}] ${cleanTitle}\n`;
         });
       }
       
@@ -674,7 +674,8 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
           responseText += "\n#### Web Resources\n";
           webReferences.forEach((ref) => {
             referenceCounter++;
-            responseText += `[${referenceCounter}] [${ref.title}](${ref.uri})\n`;
+            // 移除Web资源链接，只显示序号和标题
+            responseText += `[${referenceCounter}] ${ref.title}\n`;
           });
         }
       }
