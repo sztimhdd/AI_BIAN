@@ -4,7 +4,7 @@ import { Message, useChat } from "@ai-sdk/react";
 import Markdown from "react-markdown";
 import { useState, useRef, useEffect } from "react";
 import remarkGfm from "remark-gfm";
-import { AlertCircle, ChevronDown, Trash2, RefreshCw, XCircle } from "lucide-react";
+import { AlertCircle, ChevronDown, Trash2, RefreshCw, XCircle, Moon, Sun, Send, Menu, X, Info, ExternalLink, MessageSquare, Zap } from "lucide-react";
 
 interface PlaceholderOption {
   emoji: string;
@@ -115,16 +115,46 @@ export default function Page() {
   const [showPlaceholders, setShowPlaceholders] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [randomPlaceholders, setRandomPlaceholders] = useState<PlaceholderOption[]>([]); // State for random placeholders
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+  const [showHero, setShowHero] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showIntroPanel, setShowIntroPanel] = useState(true);
+
+  // Toggle dark mode
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   // Select random placeholders on component mount
   useEffect(() => {
     setRandomPlaceholders(getRandomItems(allPlaceholderOptions, 5));
   }, []); // Empty dependency array ensures this runs only once on mount
 
+  // Listen for system color scheme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setDarkMode(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
   const handleNewChat = () => {
     setMessages([]);
     setShowPlaceholders(true);
     setErrorMessage(null);
+    setShowIntroPanel(true);
   };
 
   const scrollToBottom = () => {
@@ -152,12 +182,21 @@ export default function Page() {
     }
   }, [error]);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      setShowHero(false);
+      setShowIntroPanel(false);
+    }
+  }, [messages]);
+
   const handleOptionSelect = async (option: PlaceholderOption) => {
     setSelectedOption(option);
     const event = { target: { value: option.text } } as React.ChangeEvent<HTMLInputElement>;
     handleInputChange(event);
     setShowPlaceholders(false);
     setErrorMessage(null);
+    setShowHero(false);
+    setShowIntroPanel(false);
     const submitEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
     try {
       await handleSubmit(submitEvent);
@@ -168,6 +207,10 @@ export default function Page() {
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     setErrorMessage(null);
+    if (input.trim()) {
+      setShowHero(false);
+      setShowIntroPanel(false);
+    }
     try {
       await handleSubmit(event);
     } catch (err: any) {
@@ -177,25 +220,25 @@ export default function Page() {
 
   const MessageDialog = ({ message }: { message: Message }) => (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 dark:bg-gray-900/80 flex items-center justify-center z-50 backdrop-blur-sm"
       onClick={(e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
           setSelectedMessage(null);
         }
       }}
     >
-      <div className="bg-gray-900 p-6 rounded-lg max-w-3xl w-full mx-4 max-h-[80vh] overflow-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Message Details</h2>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-3xl w-full mx-4 max-h-[80vh] overflow-auto shadow-xl">
+        <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Message Details</h2>
           <button
             onClick={() => setSelectedMessage(null)}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
         <div
-          className="bg-gray-950 p-6 rounded-lg font-mono text-sm leading-relaxed overflow-auto"
+          className="bg-gray-100 dark:bg-gray-900 p-6 rounded-lg font-mono text-sm leading-relaxed overflow-auto"
           dangerouslySetInnerHTML={{
             __html: formatJSON(message as unknown as Record<string, unknown>),
           }}
@@ -205,128 +248,309 @@ export default function Page() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 relative scroll-smooth"
-      >
-        <div className="max-w-3xl mx-auto space-y-6">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-4 ${message.role === "user" ? "bg-gray-800" : "bg-gray-900"} p-6 rounded-lg`}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center 
-                ${message.role === "user" ? "bg-gray-600" : "bg-blue-600"}`}
-              >
-                {message.role === "user" ? "👤" : "🤖"}
+    <div className={`flex flex-col min-h-screen ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      {/* Navigation Bar */}
+      <nav className="sticky top-0 z-10 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center">
+                <div className="flex items-center gap-2">
+                  <div className="bg-blue-600 text-white p-1.5 rounded">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-xl">BIAN <span className="text-blue-600">AI</span> Assistant</span>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="prose prose-invert max-w-none">
-                  <div
-                    className="[&>table]:w-full [&>table]:border-collapse [&>table]:my-4 
-                             [&>table>thead>tr]:border-b [&>table>thead>tr]:border-gray-700 
-                             [&>table>tbody>tr]:border-b [&>table>tbody>tr]:border-gray-800 
-                             [&>table>*>tr>*]:p-2 [&>table>*>tr>*]:text-left 
-                             [&>table>thead>tr>*]:font-semibold [&>table>tbody>tr>*]:align-top"
-                  >
-                    <Markdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        a: ({ href, children }) => {
-                          const isFootnoteRef = /^\d+$/.test(children?.[0]?.toString());
-                          if (isFootnoteRef) {
-                            return (
-                              <a href={href} className="text-blue-400 hover:underline">
-                                {children}
-                              </a>
-                            );
-                          }
-                          return (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:underline"
-                            >
-                              {children}
-                            </a>
-                          );
-                        },
-                      }}
-                    >
-                      {message.content}
-                    </Markdown>
+            </div>
+            
+            <div className="hidden md:flex items-center gap-4">
+              <a href="https://bian.org" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 transition-colors">
+                BIAN Website <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <a href="#resources" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Resources
+              </a>
+              <a href="#about" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                About
+              </a>
+              <button 
+                onClick={() => setDarkMode(!darkMode)}
+                className="ml-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+            </div>
+            
+            <div className="flex items-center md:hidden">
+              <button 
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2"
+                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="block h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+              <a
+                href="https://bian.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800 flex items-center gap-1"
+              >
+                BIAN Website <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="#resources"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Resources
+              </a>
+              <a
+                href="#about"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                About
+              </a>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Hero Section */}
+      {showHero && (
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
+          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+            <div className="text-center">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white">
+                <span className="block">BIAN AI Knowledge Base</span>
+              </h1>
+              <p className="mt-3 max-w-md mx-auto text-base sm:text-lg md:text-xl md:max-w-3xl text-blue-100">
+                Your intelligent assistant for Banking Industry Architecture Network standards and frameworks
+              </p>
+              <div className="mt-8 max-w-md mx-auto sm:max-w-lg md:max-w-3xl">
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
+                    <Zap className="w-4 h-4" />
+                    <span>Powered by RAG + Generative AI</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
+                    <Info className="w-4 h-4" />
+                    <span>Expert BIAN Knowledge</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Natural conversation interface</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedMessage(message)}
-                  className="mt-2 text-xs text-gray-500 hover:text-gray-400"
+              </div>
+              <div className="mt-8">
+                <button 
+                  onClick={() => {
+                    setShowHero(false);
+                    messagesContainerRef.current?.focus();
+                  }}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  View Details
+                  Start exploring
                 </button>
               </div>
             </div>
-          ))}
-          
-          {errorMessage && (
-            <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-medium text-red-400">Error</h3>
-                <p className="text-red-200 mt-1">{errorMessage}</p>
-              </div>
-              <button 
-                onClick={() => setErrorMessage(null)}
-                className="text-red-400 hover:text-red-300"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-          
-          {isLoading && !errorMessage && (
-            <div className="flex justify-center items-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span className="ml-3 text-gray-400">Processing your request...</span>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div>
+      )}
+
+      <main className="flex-1 flex flex-col">
+        {/* Introduction Panel - Only visible when no messages and hero is hidden */}
+        {showIntroPanel && !showHero && (
+          <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm py-6">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Welcome to BIAN AI Assistant</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Ask any question about BIAN frameworks, architecture patterns, banking service domains, or implementation strategies.
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-lg p-4 mb-2">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Info className="h-5 w-5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      This assistant is trained on BIAN's extensive knowledge base and can provide detailed answers about banking architecture standards.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chat Section */}
+        <div
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className={`flex-1 overflow-y-auto relative scroll-smooth ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} ${showHero || messages.length === 0 ? 'py-6' : 'py-0'}`}
+        >
+          <div className="max-w-3xl mx-auto space-y-6 p-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-4 p-5 rounded-lg shadow-sm transition-all duration-200 animate-fadeIn
+                  ${message.role === "user" 
+                    ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50" 
+                    : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0
+                    ${message.role === "user" 
+                      ? "bg-blue-500 text-white" 
+                      : "bg-indigo-500 text-white"}`}
+                >
+                  {message.role === "user" ? "👤" : "🤖"}
+                </div>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="prose prose-blue dark:prose-invert max-w-none">
+                    <div
+                      className="[&>table]:w-full [&>table]:border-collapse [&>table]:my-4 
+                             [&>table>thead>tr]:border-b [&>table>thead>tr]:border-gray-300 dark:[&>table>thead>tr]:border-gray-700 
+                             [&>table>tbody>tr]:border-b [&>table>tbody>tr]:border-gray-200 dark:[&>table>tbody>tr]:border-gray-800 
+                             [&>table>*>tr>*]:p-2 [&>table>*>tr>*]:text-left 
+                             [&>table>thead>tr>*]:font-semibold [&>table>tbody>tr>*]:align-top"
+                    >
+                      <Markdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          a: ({ href, children }) => {
+                            const isFootnoteRef = /^\d+$/.test(children?.[0]?.toString());
+                            if (isFootnoteRef) {
+                              return (
+                                <a href={href} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                  {children}
+                                </a>
+                              );
+                            }
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 after:content-['_↗'] after:text-xs after:opacity-70"
+                              >
+                                {children}
+                              </a>
+                            );
+                          },
+                          code: ({ children }) => {
+                            return (
+                              <code className="bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5 text-sm font-mono text-blue-700 dark:text-blue-300">
+                                {children}
+                              </code>
+                            );
+                          },
+                          blockquote: ({ children }) => {
+                            return (
+                              <blockquote className="border-l-4 border-blue-500 dark:border-blue-600 pl-4 italic text-gray-700 dark:text-gray-300">
+                                {children}
+                              </blockquote>
+                            );
+                          },
+                        }}
+                      >
+                        {message.content}
+                      </Markdown>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedMessage(message)}
+                    className="mt-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex items-center gap-1"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+            
+            {errorMessage && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3 animate-fadeIn">
+                <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-red-800 dark:text-red-300">Error</h3>
+                  <p className="text-red-700 dark:text-red-200 mt-1">{errorMessage}</p>
+                </div>
+                <button 
+                  onClick={() => setErrorMessage(null)}
+                  className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+            
+            {isLoading && !errorMessage && (
+              <div className="flex justify-center items-center py-4 animate-fadeIn">
+                <div className="relative">
+                  <div className="animate-ping absolute h-8 w-8 rounded-full bg-blue-400 opacity-75"></div>
+                  <div className="animate-spin relative rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+                <span className="ml-3 text-gray-600 dark:text-gray-300">Processing your request...</span>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      </main>
 
       {showScrollButton && (
         <button
           onClick={scrollToBottom}
-          className="fixed bottom-24 right-8 bg-gray-700 text-white p-2 rounded-full shadow-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+          className="fixed bottom-24 right-8 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-2 z-10 animate-bounce-subtle"
         >
           <ChevronDown className="w-5 h-5" />
           <span className="pr-2">Scroll to bottom</span>
         </button>
       )}
 
-      <div className="border-t border-gray-800 bg-gray-900 p-4">
+      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-4 shadow-md">
         <div className="max-w-3xl mx-auto space-y-6">
           {showPlaceholders && messages.length === 0 && (
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3 mb-4 justify-center">
               {randomPlaceholders.map((option, index) => (
                 <button
                   key={index}
                   onClick={() => handleOptionSelect(option)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all whitespace-nowrap
-                    backdrop-blur-sm bg-opacity-20 hover:bg-opacity-30
+                    backdrop-filter backdrop-blur-sm bg-opacity-20 hover:bg-opacity-30 transform hover:scale-105
                     ${
                       selectedOption === option
-                        ? "bg-blue-500/20 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                        : "bg-gray-800/40 text-gray-300 hover:bg-gray-700/40"
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : `${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`
                     }`}
                   disabled={isLoading}
                 >
                   <span>{option.emoji}</span>
-                  <span>{option.text}</span>
+                  <span className="text-sm font-medium">{option.text}</span>
                 </button>
               ))}
             </div>
@@ -337,21 +561,28 @@ export default function Page() {
               <input
                 value={input}
                 onChange={handleInputChange}
-                placeholder="Ask Vectorize..."
-                className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg border border-gray-700 focus:outline-none focus:border-gray-600 focus:ring-1 focus:ring-gray-600"
+                placeholder="Ask about BIAN standards, frameworks, or implementation..."
+                className={`flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors
+                ${darkMode 
+                  ? 'bg-gray-700 text-white border border-gray-600 placeholder-gray-400' 
+                  : 'bg-gray-100 text-gray-900 border border-gray-300 placeholder-gray-500'}`}
                 disabled={isLoading}
               />
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 disabled={isLoading || !input.trim()}
               >
-                Send
+                <Send className="w-5 h-5" />
+                <span className="hidden sm:inline">Send</span>
               </button>
             </form>
             <button
               onClick={handleNewChat}
-              className="bg-gray-800 text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+              className={`p-3 rounded-lg transition-colors flex items-center 
+                ${darkMode 
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               title="Start New Chat"
               disabled={isLoading}
             >
@@ -367,8 +598,8 @@ export default function Page() {
               className="block transition-opacity hover:opacity-80"
             >
               <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm">Powered by</span>
-                <img src="/vio-light-logo.svg" alt="Vectorize Logo" className="h-5" />
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Powered by</span>
+                <img src={darkMode ? "/vio-light-logo.svg" : "/vio-light-logo.svg"} alt="Vectorize Logo" className="h-5" />
               </div>
             </a>
           </div>
@@ -376,6 +607,31 @@ export default function Page() {
       </div>
 
       {selectedMessage && <MessageDialog message={selectedMessage} />}
+      
+      {/* Add global styles for animations */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes bounceSoft {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        .animate-bounce-subtle {
+          animation: bounceSoft 2s infinite;
+        }
+        
+        .dark {
+          color-scheme: dark;
+        }
+      `}</style>
     </div>
   );
 }
