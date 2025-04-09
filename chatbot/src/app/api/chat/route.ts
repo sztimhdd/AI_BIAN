@@ -58,70 +58,119 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(requiredApiKey);
     const generativeModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Use Gemini model
 
-    let context: RetrievalContext | null = null;
+    // Receive User Query: Extract the original user question
+    if (messages.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "No messages provided"
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const originalUserQuestion = String(messages[messages.length - 1].content);
+    
+    // Query Rewriting (for RAG): Transform user's question into optimized query
+    let rewrittenQuery = originalUserQuestion; // Default fallback
+    
+    try {
+      // Prepare the query rewriting prompt
+      const queryRewritingPrompt = `
+# ROLE
+You are an expert query transformation assistant specializing in the BIAN domain.
 
-    if (messages.length > 0) {
-      try {
-        const previousMessages = messages.slice(0, -1);
-        context = await retrieveData(String(messages[messages.length - 1].content), previousMessages);
-      } catch (retrieveError: any) {
-        return new Response(
-          JSON.stringify({
-            error: retrieveError.message || "Failed to retrieve context data"
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+# TASK
+Transform the user's natural language question into a precise English query optimized for BIAN document retrieval.
+
+# REQUIREMENTS
+- Focus on key BIAN concepts, technical terms, Service Domains, or Service Operations
+- Preserve the core semantic meaning and intent
+- Remove conversational fillers and unnecessary context
+- Output only the rewritten query string, with no preamble or explanation
+
+# INPUT
+Original User Question: "${originalUserQuestion}"
+
+# OUTPUT
+Output only the rewritten English query string.
+`;
+
+      // Call Gemini for query rewriting
+      const rewriteResult = await generativeModel.generateContent(queryRewritingPrompt);
+      
+      if (rewriteResult && rewriteResult.response) {
+        const rewriteText = rewriteResult.response.text();
+        if (rewriteText && rewriteText.trim()) {
+          rewrittenQuery = rewriteText.trim();
+          console.log(`Rewritten query: "${rewrittenQuery}"`);
+        } else {
+          console.warn("Received empty rewritten query, falling back to original question");
+        }
       }
-    } else {
-      console.log("No messages available, skipping retrieveData.");
+    } catch (rewriteError) {
+      console.error("Error during query rewriting:", rewriteError);
+      console.log("Falling back to original user question for retrieval");
     }
 
-    // Override the last message to include the context and instructions
-    if (messages.length > 0 && context) {
-      const documents = context.documents || [];
+    // RAG Retrieval: Use the rewritten query to retrieve relevant documents
+    let context: RetrievalContext | null = null;
+    
+    try {
+      const previousMessages = messages.slice(0, -1);
+      // Use rewrittenQuery instead of original question for retrieval
+      context = await retrieveData(rewrittenQuery, previousMessages);
+    } catch (retrieveError: any) {
+      return new Response(
+        JSON.stringify({
+          error: retrieveError.message || "Failed to retrieve context data"
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Final Answer Generation: Generate comprehensive answer
+    let formattedDocuments = "";
+    
+    if (context && context.documents) {
       // Format documents for the prompt
-      const formattedDocuments = documents.map((doc, index) => {
-        // Create source identifier with link using example URL pattern
+      formattedDocuments = context.documents.map((doc, index) => {
         const sourceId = `source=${index + 1}&link=https://example.com/${encodeURIComponent(doc.source_display_name || doc.filename)}`;
-        
-        // Return formatted chunk with source
         return `[${sourceId}]\n${doc.text}`;
       }).join('\n\n');
+    }
 
-      messages[messages.length - 1].content = `
-You are tasked with answering a question using provided chunks of information. Your goal is to provide an accurate answer while citing your sources using a specific markdown format.
+    // Prepare the final answer generation prompt
+    const finalAnswerPrompt = `
+# ROLE
+You are an expert assistant specializing in BIAN.
 
-Here is the question you need to answer:
-<question>
-${messages[messages.length - 1].content}
-</question>
+# TASK
+Provide a comprehensive and accurate answer in English to the user's question.
 
-Below are chunks of information that you can use to answer the question. Each chunk is preceded by a 
-source identifier in the format [source=X&link=Y], where X is the source number and Y is the URL of the source:
+# REQUIREMENTS
+- Synthesize information from:
+  1. Your internal knowledge base regarding BIAN
+  2. The provided document excerpts
+  3. Your general world knowledge for context
+- Prioritize accuracy and depth
+- Cite specific, relevant details from the excerpts when appropriate
+- Respond in clear, professional English
+- Structure the answer logically
 
+# INPUT
+User's Original Question: "${originalUserQuestion}"
+
+Provided Document Excerpts:
 <chunks>
 ${formattedDocuments}
 </chunks>
 
-Your task is to answer the question using the information provided in these chunks. 
-When you use information from a specific chunk in your answer, you must cite it using a markdown link format. 
-The citation should appear at the end of the sentence where the information is used.
-
-If you cannot answer the question using the provided chunks, say "Sorry I don't know".
-
-The citation format should be as follows:
-[Chunk source](URL)
-
-For example, if you're using information from the chunk labeled [source=3&link=https://example.com/page], your citation would look like this:
-[3](https://example.com/page) and would open a new tab to the source URL when clicked.
+# OUTPUT
+Generate only the final answer in English to the user's question.
 `;
-    }
 
-   // console.log(`Sending messages to Google Gemini LLM (${model})`, messages);
-
-    // Generate content
-    const result = await generativeModel.generateContent(messages[messages.length - 1].content as string);
-    console.log("Result from Gemini API:", result);
+    // Generate the final answer
+    const result = await generativeModel.generateContent(finalAnswerPrompt);
     
     // Extract response text
     let responseText = "";
@@ -158,8 +207,7 @@ For example, if you're using information from the chunk labeled [source=3&link=h
     // Add log before creating stream
     console.log("Response text extracted:", responseText ? responseText.substring(0, 100) + "..." : "EMPTY");
 
-    // Fix: Create a stream directly from the responseText instead of using streamText
-    // Format the output according to Vercel AI SDK Stream Data format (0: for text)
+    // Streaming Response: Create a stream from the responseText
     const readableStream = new ReadableStream({
       start(controller) {
         const formattedChunk = `0:"${JSON.stringify(responseText).slice(1, -1)}"\n`; // Format as 0:"<escaped-text>"\n
@@ -172,7 +220,6 @@ For example, if you're using information from the chunk labeled [source=3&link=h
     console.log("ReadableStream created successfully with AI SDK data format.");
 
     // Return the stream using the standard Web API Response
-    // Add X-Experimental-Stream-Data header
     return new Response(readableStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',

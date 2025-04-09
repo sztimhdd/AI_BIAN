@@ -11,13 +11,36 @@ interface PlaceholderOption {
   text: string;
 }
 
-const placeholderOptions: PlaceholderOption[] = [
+// Full pool of placeholder questions
+const allPlaceholderOptions: PlaceholderOption[] = [
+  // Original 5
   { emoji: "🎯", text: "What is the primary purpose of the BIAN Service Landscape?" },
   { emoji: "🔗", text: "Explain the difference between a Service Domain and a Service Operation in BIAN terminology." },
   { emoji: "💻", text: "How does BIAN's framework support API development in banking systems?" },
   { emoji: "🗺️", text: "Describe the relationship between Business Scenarios and Service Operations in BIAN." },
   { emoji: "🏗️", text: "What are the core design principles that underpin the BIAN framework?" },
+  // New 10
+  { emoji: "🧩", text: "What are the key components of the BIAN reference architecture, and how do they relate to each other?" },
+  { emoji: "🗺️", text: "How can we map our existing business capabilities and services to the BIAN service landscape?" },
+  { emoji: "📈", text: "What are the primary benefits of adopting BIAN for our financial institution, and how can we measure the ROI?" },
+  { emoji: "🛠️", text: "What is the recommended approach for implementing BIAN in our organization, including any tools or methodologies provided?" },
+  { emoji: "🤝", text: "How does BIAN integrate with other industry standards or frameworks we are using, such as TOGAF or ArchiMate?" },
+  { emoji: "🏦", text: "Can you provide examples or case studies of financial institutions that have successfully implemented BIAN?" },
+  { emoji: "🎓", text: "What training and certification programs are available for our architects and developers to learn BIAN?" },
+  { emoji: "🚀", text: "What is the roadmap for BIAN's future development, and how will it impact our implementation?" },
+  { emoji: "🔗", text: "How does BIAN support open banking initiatives and the development of APIs for financial services?" },
+  { emoji: "🌐", text: "What kind of community support and resources are available to BIAN members?" },
 ];
+
+// Function to get N random items from an array
+function getRandomItems<T>(arr: T[], n: number): T[] {
+  if (n > arr.length) {
+    console.warn("Cannot select more items than available in the array.");
+    return [...arr]; // Return a copy of the original array if n is too large
+  }
+  const shuffled = [...arr].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, n);
+}
 
 const formatJSON = (obj: Record<string, unknown>) => {
   const processValue = (value: unknown, level: number): string => {
@@ -91,6 +114,12 @@ export default function Page() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [showPlaceholders, setShowPlaceholders] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [randomPlaceholders, setRandomPlaceholders] = useState<PlaceholderOption[]>([]); // State for random placeholders
+
+  // Select random placeholders on component mount
+  useEffect(() => {
+    setRandomPlaceholders(getRandomItems(allPlaceholderOptions, 5));
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const handleNewChat = () => {
     setMessages([]);
@@ -283,7 +312,7 @@ export default function Page() {
         <div className="max-w-3xl mx-auto space-y-6">
           {showPlaceholders && messages.length === 0 && (
             <div className="flex flex-wrap gap-3 mb-4">
-              {placeholderOptions.map((option, index) => (
+              {randomPlaceholders.map((option, index) => (
                 <button
                   key={index}
                   onClick={() => handleOptionSelect(option)}
