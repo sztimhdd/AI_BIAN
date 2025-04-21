@@ -1,3 +1,5 @@
+chroma_db_diagrams/
+venv/
 diagramRAG/venv/pyvenv.cfg
 diagramRAG/venv/bin/activate
 diagramRAG/venv/bin/activate.csh
