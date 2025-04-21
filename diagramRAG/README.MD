@@ -140,3 +140,110 @@ graph TD
 *   不考虑使用多模态模型直接分析 SVG 图像 (完全依赖元数据和文本描述)。
 *   简化错误处理和日志记录到满足基本调试需求即可。
 *   不考虑图表创建或编辑功能。
+
+---
+
+## 7. API 使用指南
+
+现已完成 diagramRAG API 的实现，提供了一个兼容于主聊天应用接口的图表检索 API。
+
+### 启动 API 服务
+
+1. **Windows 环境**:
+   ```bash
+   # 双击 run_api.bat 或在命令行中执行
+   run_api.bat
+   ```
+
+2. **Linux/MacOS 环境**:
+   ```bash
+   # 添加执行权限并运行
+   chmod +x run_api.sh
+   ./run_api.sh
+   ```
+
+### API 端点说明
+
+API 服务启动后，将在 `http://localhost:8000` 提供以下端点：
+
+1. **`POST /retrieve_diagrams`**: 主要的图表检索端点
+   - 请求格式：
+     ```json
+     {
+       "question": "用户查询文本",
+       "numResults": 5,  // 可选，默认为 5
+       "rerank": true    // 可选，默认为 true
+     }
+     ```
+   - 响应格式：
+     ```json
+     {
+       "documents": [
+         {
+           "text": "图表描述文本",
+           "filename": "diagram_xxx.svg",
+           "source_display_name": "BIAN Diagram 标题",
+           "svg_content": "<svg>...</svg>",
+           "source_url": "https://bian.org/...",
+           "metadata": { ... }
+         },
+         // ... 更多结果
+       ]
+     }
+     ```
+
+2. **`GET /health`**: 健康检查端点
+   - 响应: `{"status": "ok"}`
+
+### 测试 API
+
+可以使用 Swagger UI 或 curl 来测试 API:
+
+1. **使用 Swagger UI**: 
+   - 访问 `http://localhost:8000/docs`
+   - 在交互式界面中测试 `/retrieve_diagrams` 端点
+
+2. **使用 curl**:
+   ```bash
+   curl -X POST "http://localhost:8000/retrieve_diagrams" \
+     -H "Content-Type: application/json" \
+     -d '{"question": "BIAN服务域之间的关系图", "numResults": 3}'
+   ```
+
+### 与主聊天应用集成
+
+该 API 已设计为与主聊天应用的 `route.ts` 中的调用方式兼容。主聊天应用可以通过以下方式调用此 API：
+
+```typescript
+// 在 route.ts 中添加图表检索功能
+async function retrieveDiagrams(query: string, k: number = 3): Promise<any> {
+  const response = await fetch("http://localhost:8000/retrieve_diagrams", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      question: query,
+      numResults: k
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`图表检索失败: ${response.status} ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+```
+
+---
+
+## 8. 系统要求
+
+- **Python 版本**: 3.8+ 
+- **依赖库**: 
+  - sentence-transformers
+  - fastapi
+  - uvicorn[standard]
+  - chromadb
+  - pydantic

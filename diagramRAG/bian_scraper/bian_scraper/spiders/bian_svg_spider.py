@@ -6,7 +6,8 @@ import logging # Import logging
 
 # --- Configuration ---
 # Use the URL that requires JS rendering
-START_URL = "https://bian.org/servicelandscape-12-0-0/object_21.html?object=30437"
+# Change START_URL to the Service Landscape root
+START_URL = "https://bian.org/servicelandscape-12-0-0/"
 ALLOWED_DOMAIN = "bian.org"
 # BIAN specific attributes to extract from the root <svg> tag
 SVG_METADATA_ATTRIBUTES = ['bizzid', 'bizzsemantic', 'bizzconcept']
@@ -70,34 +71,35 @@ class BianSvgSpider(scrapy.Spider):
             else:
                  self.log(f"Failed to extract data from SVG #{i+1} on {response.url}. extract_svg_data returned None.", level=logging.WARNING)
 
-        # --- Follow Links (Depth 1) ---
+        # --- Follow Links (No Depth Limit) ---
         # This XPath should also work on the JS-rendered content now
-        current_depth = response.meta.get('depth', 0)
-        self.log(f"Current depth: {current_depth}", level=logging.DEBUG)
-        if current_depth < 1:
-            self.log(f"Following links from {response.url} (depth < 1)", level=logging.DEBUG)
-            links = response.xpath('//a/@href').getall()
-            self.log(f"Found {len(links)} potential links: {links}", level=logging.DEBUG) # Check this log again
-            followed_count = 0
-            for link in links:
-                absolute_url = urljoin(response.url, link)
-                parsed_url = urlparse(absolute_url)
+        # Remove depth check to allow full crawl within allowed domain and .html constraint
+        # current_depth = response.meta.get('depth', 0)
+        # self.log(f"Current depth: {current_depth}", level=logging.DEBUG)
+        # if current_depth < 1: # REMOVE DEPTH LIMIT
+        self.log(f"Following links from {response.url}", level=logging.DEBUG)
+        links = response.xpath('//a/@href').getall()
+        self.log(f"Found {len(links)} potential links", level=logging.DEBUG)
+        followed_count = 0
+        for link in links:
+            absolute_url = urljoin(response.url, link)
+            parsed_url = urlparse(absolute_url)
 
-                if parsed_url.netloc == ALLOWED_DOMAIN and absolute_url.endswith('.html'):
-                     self.log(f"Found valid internal HTML link to follow: {absolute_url}", level=logging.DEBUG)
-                     followed_count += 1
-                     # Also use Playwright for followed links
-                     yield scrapy.Request(
-                         absolute_url,
-                         callback=self.parse,
-                         meta={
-                             'playwright': True, # <<< Use Playwright here too
-                             'depth': current_depth + 1
-                         }
-                     )
-            self.log(f"Finished checking links on {response.url}. Followed {followed_count} valid links.", level=logging.DEBUG)
-        else:
-             self.log(f"Not following links from {response.url} (depth limit reached)", level=logging.DEBUG)
+            if parsed_url.netloc == ALLOWED_DOMAIN and absolute_url.endswith('.html'):
+                 self.log(f"Found valid internal HTML link to follow: {absolute_url}", level=logging.DEBUG)
+                 followed_count += 1
+                 # Also use Playwright for followed links
+                 yield scrapy.Request(
+                     absolute_url,
+                     callback=self.parse,
+                     meta={
+                         'playwright': True, # <<< Use Playwright here too
+                         # 'depth': current_depth + 1 # Remove depth tracking
+                     }
+                 )
+        self.log(f"Finished checking links on {response.url}. Followed {followed_count} valid links.", level=logging.DEBUG)
+        # else: # REMOVE DEPTH LIMIT
+        #     self.log(f"Not following links from {response.url} (depth limit reached)", level=logging.DEBUG) # REMOVE DEPTH LIMIT
 
 
     def extract_svg_data(self, svg_string: str, source_url: str, svg_index: int) -> dict | None:

@@ -5,6 +5,8 @@ import Markdown from "react-markdown";
 import { useState, useRef, useEffect } from "react";
 import remarkGfm from "remark-gfm";
 import { AlertCircle, ChevronDown, Trash2, RefreshCw, XCircle, Moon, Sun, Send, Menu, X, Info, ExternalLink, MessageSquare, Zap, Map, Globe } from "lucide-react";
+import { retrieveDiagrams, DiagramDocument } from "../services/diagramService";
+import DiagramViewer from "../components/DiagramViewer";
 
 interface PlaceholderOption {
   emoji: string;
@@ -137,6 +139,7 @@ export default function Page() {
   const [showIntroPanel, setShowIntroPanel] = useState(true);
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [diagramsByMessageId, setDiagramsByMessageId] = useState<Record<string, DiagramDocument[]>>({});
   
   const resourcesDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -177,6 +180,52 @@ export default function Page() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Effect to fetch diagrams when a new user message appears
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    // Only act on new user messages for which we haven't checked diagrams yet
+    if (lastMessage && lastMessage.role === 'user' && diagramsByMessageId[lastMessage.id] === undefined) { 
+      const query = lastMessage.content;
+      // Basic keyword check to decide if a diagram search is relevant
+      const potentiallyNeedsDiagram = 
+        query.toLowerCase().includes('diagram') || 
+        query.toLowerCase().includes('show me') ||
+        query.toLowerCase().includes('visualize') ||
+        query.toLowerCase().includes('service domain') || 
+        query.toLowerCase().includes('landscape') ||
+        query.toLowerCase().includes('architecture'); 
+
+      if (potentiallyNeedsDiagram) {
+         console.log(`Diagram search triggered for user message ID: ${lastMessage.id}, Query: "${query}"`);
+         // Set state immediately to indicate searching is in progress (prevents re-triggering)
+         setDiagramsByMessageId(prev => ({ ...prev, [lastMessage.id]: [] })); // Use empty array as placeholder
+
+         retrieveDiagrams(query)
+           .then(response => {
+             if (response.documents && response.documents.length > 0) {
+               console.log(`Found ${response.documents.length} diagrams for message ${lastMessage.id}`);
+               setDiagramsByMessageId(prev => ({
+                 ...prev,
+                 [lastMessage.id]: response.documents
+               }));
+             } else {
+               console.log(`No diagrams found for message ${lastMessage.id}`);
+               // Keep the empty array to indicate search completed with no results
+             }
+           })
+           .catch(error => {
+             console.error(`Error retrieving diagrams for message ${lastMessage.id}:`, error);
+             // Keep empty array on error as well
+           });
+      } else {
+         // Mark as checked, no search needed
+         console.log(`Diagram search skipped for user message ID: ${lastMessage.id}`);
+         setDiagramsByMessageId(prev => ({ ...prev, [lastMessage.id]: [] }));
+      }
+    }
+  // Depend on messages array and the state itself to avoid potential issues
+  }, [messages, diagramsByMessageId]); 
 
   const handleNewChat = () => {
     setMessages([]);
@@ -666,9 +715,29 @@ export default function Page() {
                       </Markdown>
                     </div>
                   </div>
+                  {/* Diagram Display Area - Placed below the main message content */}
+                  {diagramsByMessageId[message.id] && diagramsByMessageId[message.id].length > 0 && (
+                    <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                      <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                        <Map className="w-4 h-4" /> 
+                        Related Diagrams:
+                      </h4>
+                      <div className="space-y-3">
+                        {diagramsByMessageId[message.id].map((diagram, index) => (
+                          <DiagramViewer
+                            key={`${message.id}-diag-${index}`} // Unique key for each diagram
+                            svgContent={diagram.svg_content}
+                            title={diagram.source_display_name || `Diagram ${index + 1}`} // Provide fallback title
+                            sourceUrl={diagram.source_url}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* End Diagram Display Area */}
                   <button
                     onClick={() => setSelectedMessage(message)}
-                    className="mt-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex items-center gap-1"
+                    className="mt-3 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex items-center gap-1"
                   >
                     <Info className="w-3.5 h-3.5" />
                     View Details

@@ -56,3 +56,7 @@ diagramRAG/venv/bin/websockets
 diagramRAG/venv/bin/wsdump
 diagramRAG/venv/include/site/python3.12/greenlet/greenlet.h
 diagramRAG/venv/share/man/man1/isympy.1
+diagramRAG/venv/bin/proton
+diagramRAG/venv/bin/proton-viewer
+diagramRAG/venv/bin/torchfrtrace
+diagramRAG/venv/bin/torchrun
