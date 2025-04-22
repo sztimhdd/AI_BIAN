@@ -84,15 +84,39 @@ def setup_database():
         # 创建临时提取目录
         os.makedirs(temp_extract, exist_ok=True)
         
+        # 解压前记录
+        logging.info(f"解压文件到 {temp_extract}...")
+        
         # 解压文件
         with tarfile.open(temp_file) as tar:
+            # 记录压缩包内容
+            logging.info(f"压缩包内容: {tar.getnames()[:10]}...")
             tar.extractall(path=temp_extract)
+        
+        # 解压后记录
+        logging.info(f"解压完成，临时目录内容: {os.listdir(temp_extract)}")
+        
+        # 记录源路径状态
+        src_path = os.path.join(temp_extract, "chroma_db_diagrams")
+        if os.path.exists(src_path):
+            logging.info(f"源路径存在: {src_path}")
+            logging.info(f"源路径内容: {os.listdir(src_path)[:10]}")
+        else:
+            logging.error(f"源路径不存在: {src_path}")
+            # 列出实际存在的路径
+            logging.error(f"实际存在的路径: {os.listdir(temp_extract)}")
+            
+            # 尝试找到实际的数据库目录
+            potential_paths = [os.path.join(temp_extract, d) for d in os.listdir(temp_extract) 
+                              if os.path.isdir(os.path.join(temp_extract, d))]
+            if potential_paths:
+                src_path = potential_paths[0]
+                logging.info(f"使用替代路径: {src_path}")
         
         # 确保目标目录存在
         os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True)
         
         # 复制文件到目标位置
-        src_path = os.path.join(temp_extract, "chroma_db_diagrams")
         if os.path.exists(CHROMA_DB_PATH):
             shutil.rmtree(CHROMA_DB_PATH)
         shutil.copytree(src_path, CHROMA_DB_PATH)
@@ -155,7 +179,11 @@ async def startup_event():
     
     try:
         # 首先设置数据库
-        setup_database()
+        try:
+            setup_database()
+        except Exception as setup_err:
+            logging.error(f"数据库设置失败: {setup_err}")
+            # 继续执行，尝试使用可能已存在的数据库
         
         logging.info(f"Loading embedding model: {MODEL_NAME}...")
         # 直接使用模型名称初始化嵌入函数
@@ -171,14 +199,20 @@ async def startup_event():
         try:
             collection = client.get_collection(name=COLLECTION_NAME)
             logging.info(f"成功获取集合 {COLLECTION_NAME}")
-        except Exception as e:
-            logging.error(f"获取集合失败: {e}")
-            raise
+        except Exception as coll_err:
+            logging.error(f"获取集合失败: {coll_err}")
+            logging.info(f"尝试创建新集合 {COLLECTION_NAME}")
+            collection = client.create_collection(
+                name=COLLECTION_NAME,
+                embedding_function=embedding_function
+            )
         
         logging.info("Startup completed successfully.")
     except Exception as e:
         logging.error(f"Error during startup: {e}")
-        raise
+        # 不要抛出异常，避免重启循环
+        # 记录错误但让应用继续运行
+        logging.error("应用将继续但可能无法正常工作")
 
 # 检索图表端点
 @app.post("/retrieve_diagrams", response_model=DiagramRetrievalResponse)
