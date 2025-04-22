@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-import requests
 import tarfile
 import shutil
 
@@ -28,100 +27,52 @@ os.makedirs(CHROMA_DB_PATH, exist_ok=True)
 MODEL_NAME = "all-MiniLM-L6-v2"
 TOP_K = 1  # 默认返回的图表数量
 
-# 添加Google Drive下载函数
-def download_file_from_google_drive(file_id, destination):
-    """从Google Drive下载文件"""
-    URL = "https://drive.google.com/uc?export=download"
-    
-    session = requests.Session()
-    
-    # 初始请求获取确认令牌
-    response = session.get(URL, params={'id': file_id}, stream=True)
-    token = None
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            token = value
-            break
-    
-    if token:
-        params = {'id': file_id, 'confirm': token}
-    else:
-        params = {'id': file_id}
-    
-    # 下载文件
-    response = session.get(URL, params=params, stream=True)
-    
-    # 保存文件
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(32768):
-            if chunk:
-                f.write(chunk)
-    
-    return destination
-
 def setup_database():
     """设置数据库目录和文件"""
-    # 数据库标记文件路径
     flag_file = os.path.join(CHROMA_DB_PATH, ".initialized")
-    
-    # 如果标记文件存在，说明数据库已初始化
     if os.path.exists(flag_file):
-        logging.info("数据库已存在，跳过下载")
+        logging.info("数据库已存在，跳过初始化")
         return
-    
+
     try:
-        # 使用您的Google Drive文件ID
-        file_id = "11OcXDHVRZ00fvubR6XRKmusrb-gpjj27"
-        
-        # 临时下载路径
-        temp_file = "/tmp/chroma_db_diagrams.tar.gz"
+        # 本地压缩包路径（仓库已包含该文件）
+        local_tar = os.path.join(os.getcwd(), "chroma_db_diagrams.tar.gz")
         temp_extract = "/tmp/extracted"
-        
-        logging.info("开始从Google Drive下载数据库...")
-        download_file_from_google_drive(file_id, temp_file)
-        logging.info("下载完成，开始解压...")
-        
+        logging.info(f"开始解压本地压缩包 {local_tar} ...")
+
         # 创建临时提取目录
         os.makedirs(temp_extract, exist_ok=True)
-        
-        # 解压前记录
-        logging.info(f"解压文件到 {temp_extract}...")
-        
+
         # 解压文件
-        with tarfile.open(temp_file) as tar:
-            # 记录压缩包内容
-            logging.info(f"压缩包内容: {tar.getnames()[:10]}...")
+        with tarfile.open(local_tar) as tar:
+            logging.info(f"压缩包内容前10项: {tar.getnames()[:10]}")
             tar.extractall(path=temp_extract)
-        
+
         # 解压后记录
         logging.info(f"解压完成，临时目录内容: {os.listdir(temp_extract)}")
-        
+
         # 找到压缩包中的实际数据库目录
-        if os.path.exists(os.path.join(temp_extract, "chroma_db_diagrams")):
-            src_path = os.path.join(temp_extract, "chroma_db_diagrams")
+        nested = os.path.join(temp_extract, "chroma_db_diagrams")
+        if os.path.isdir(nested):
+            src_path = nested
         else:
-            # 如果不是嵌套的，直接使用解压目录
             src_path = temp_extract
-            logging.info(f"直接使用解压目录作为源: {src_path}")
-        
+        logging.info(f"源目录: {src_path}")
+
         # 确保目标目录存在
         os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True)
-        
+
         # 复制文件到目标位置
         if os.path.exists(CHROMA_DB_PATH):
             shutil.rmtree(CHROMA_DB_PATH)
         shutil.copytree(src_path, CHROMA_DB_PATH)
-        
+
         # 创建标记文件
         with open(flag_file, "w") as f:
             f.write("initialized")
-        
-        logging.info(f"数据库成功设置到 {CHROMA_DB_PATH}")
-        
-        # 清理临时文件
-        os.remove(temp_file)
-        shutil.rmtree(temp_extract)
-        
+
+        logging.info(f"数据库成功初始化到 {CHROMA_DB_PATH}")
+
     except Exception as e:
         logging.error(f"设置数据库时出错: {e}")
         raise
