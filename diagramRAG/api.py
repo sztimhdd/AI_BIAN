@@ -18,11 +18,9 @@ logging.basicConfig(
 
 # 常量定义
 COLLECTION_NAME = "bian_diagrams"
-# CHROMA_DB_PATH = "./chroma_db_diagrams" # 旧路径
-# 从环境变量获取挂载路径，默认为本地路径
-CHROMA_DB_VOLUME_MOUNT_PATH = os.getenv("CHROMA_VOLUME_MOUNT_PATH", "./chroma_db") 
-CHROMA_DB_PATH = os.path.join(CHROMA_DB_VOLUME_MOUNT_PATH, "diagrams_db") 
-# 确保目标目录存在
+# 使用环境变量或默认路径
+CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "/app/chroma_db/diagrams_db")
+# 确保目录存在
 os.makedirs(CHROMA_DB_PATH, exist_ok=True) 
 MODEL_NAME = "all-MiniLM-L6-v2"
 TOP_K = 1  # 默认返回的图表数量
