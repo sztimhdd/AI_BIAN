@@ -7,7 +7,7 @@ import logging # Import logging
 # --- Configuration ---
 # Use the URL that requires JS rendering
 # Change START_URL to the Service Landscape root
-START_URL = "https://bian.org/servicelandscape-12-0-0/"
+START_URL = "https://bian.org/servicelandscape-12-0-0/views.html"
 ALLOWED_DOMAIN = "bian.org"
 # BIAN specific attributes to extract from the root <svg> tag
 SVG_METADATA_ATTRIBUTES = ['bizzid', 'bizzsemantic', 'bizzconcept']

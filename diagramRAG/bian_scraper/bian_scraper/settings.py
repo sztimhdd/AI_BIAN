@@ -25,10 +25,10 @@ ROBOTSTXT_OBEY = True
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 2 # Set initial delay to 2 seconds
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
-#CONCURRENT_REQUESTS_PER_IP = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 2 # Limit concurrent requests to bian.org
+#CONCURRENT_REQUESTS_PER_IP = 16 # Keep this commented if CONCURRENT_REQUESTS_PER_DOMAIN is set
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -68,16 +68,16 @@ ROBOTSTXT_OBEY = True
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-#AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = True # Enable AutoThrottle
 # The initial download delay
-#AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 2 # Match DOWNLOAD_DELAY
 # The maximum download delay to be set in case of high latencies
-#AUTOTHROTTLE_MAX_DELAY = 60
+#AUTOTHROTTLE_MAX_DELAY = 60 # Keep default or adjust if needed
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0 # Target 1 request at a time on average
 # Enable showing throttling stats for every response received:
-#AUTOTHROTTLE_DEBUG = False
+AUTOTHROTTLE_DEBUG = False # Set to True if you want to see detailed throttling logs
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
@@ -110,6 +110,9 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 # (Keep the USER_AGENT and LOG_LEVEL settings we added before)
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 LOG_LEVEL = 'DEBUG' # Keep DEBUG for now to see detailed logs
+
+# Increase Playwright navigation timeout further to handle very slow pages
+PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 1200000  # Timeout in milliseconds (120 seconds)
 
 # Make sure ROBOTSTXT_OBEY is False if you encounter issues with robots.txt blocking Playwright
 # ROBOTSTXT_OBEY = False

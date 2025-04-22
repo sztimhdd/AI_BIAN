@@ -174,10 +174,19 @@ Output only the rewritten English query string.
       );
     }
 
-    // Final Answer Generation: Generate comprehensive answer
-    // 添加日志记录，用于调试
-    console.log(`Starting request to ${model} with Web Grounding...`);
+    // 在retrieveData调用之后添加
+    let diagramContext = { documents: [] };
+    try {
+      // 使用同一个重写后的查询检索图表
+      diagramContext = await retrieveDiagrams(rewrittenQuery, 3);
+      console.log(`Retrieved ${diagramContext.documents?.length || 0} relevant diagrams`);
+    } catch (diagramError) {
+      console.error("Error retrieving diagrams:", diagramError);
+      // 错误处理但继续流程
+    }
 
+    // 将图表整合到提示中
+    // 在准备finalAnswerPrompt之前添加图表相关内容到formattedDocuments
     let formattedDocuments = "";
     let documentSources: {title: string, link: string}[] = [];
     
@@ -251,6 +260,15 @@ Output only the rewritten English query string.
       }).join('\n\n');
     }
 
+    // 如果图表上下文可用，添加图表相关内容到formattedDocuments
+    if (diagramContext.documents && diagramContext.documents.length > 0) {
+      const diagramSections = diagramContext.documents.map((diagram, index) => {
+        return `[DIAGRAM ${index + 1}]: ${diagram.text}\n<svg available: true, source: ${diagram.source_url}>`;
+      }).join('\n\n');
+      
+      formattedDocuments += '\n\n--- Related BIAN Diagrams ---\n' + diagramSections;
+    }
+
     // Prepare the final answer generation prompt
     const finalAnswerPrompt = `
 # ROLE
@@ -263,11 +281,14 @@ Provide a comprehensive, accurate, and professional answer about BIAN, covering 
 - Synthesize information from:
   1. Your internal BIAN knowledge base
   2. The provided document excerpts 
-  3. Latest information obtained through Google search
+  3. The relevant BIAN diagrams (if available)
+  4. Latest information obtained through Google search
 - Prioritize accuracy and professionalism
 - Always use proper citations when referencing information:
   - For BIAN documents: use [Doc#] format
+  - For BIAN diagrams: use [DIAGRAM#] format
   - For web references: use appropriate citations
+- When relevant diagrams are available, mention them specifically and describe their relevance
 - Structure your answer with clear headings, lists, and tables for improved readability
 - Include relevant examples where appropriate
 - Provide a concise but comprehensive answer in English
@@ -827,4 +848,35 @@ const retrieveData = async (
   }
 
   return await response.json() as RetrievalContext;
+};
+
+const retrieveDiagrams = async (
+  question: string,
+  numResults: number = 3
+): Promise<{documents: any[]}> => {
+  try {
+    const diagramApiUrl = process.env.DIAGRAM_API_URL || "http://localhost:8000/retrieve_diagrams";
+    
+    const response = await fetch(diagramApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+        numResults,
+        rerank: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`图表检索失败: ${response.status} ${response.statusText}. ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error retrieving diagrams:", error);
+    return { documents: [] }; // 返回空数组，确保流程继续
+  }
 };
