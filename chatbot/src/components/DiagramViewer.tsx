@@ -129,6 +129,8 @@ const DiagramViewer: React.FC<DiagramProps> = ({ svgContent, title, sourceUrl, i
   return (
     <>
       <div className="border border-gray-300 dark:border-gray-700 rounded-md p-4 my-3 bg-gray-50 dark:bg-gray-800 shadow-sm overflow-hidden">
+        {/* 移除图表标题和按钮容器 */}
+        {/* 
         <div className="flex justify-between items-center mb-2">
           <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 truncate" title={title}>
             Diagram {index}: {title}
@@ -143,6 +145,7 @@ const DiagramViewer: React.FC<DiagramProps> = ({ svgContent, title, sourceUrl, i
             </button>
           </div>
         </div>
+        */}
         
         {svgError ? (
           <div className="text-red-500 mb-2">
@@ -151,7 +154,7 @@ const DiagramViewer: React.FC<DiagramProps> = ({ svgContent, title, sourceUrl, i
           </div>
         ) : (
           <div 
-            className="overflow-auto max-h-60 bg-white dark:bg-gray-700 p-2 rounded cursor-pointer" 
+            className="overflow-auto max-h-60 bg-white dark:bg-gray-700 p-2 rounded cursor-pointer mb-2" 
             onClick={() => setIsZoomed(true)}
           >
             {sanitizedSvg ? (
@@ -184,16 +187,15 @@ const DiagramViewer: React.FC<DiagramProps> = ({ svgContent, title, sourceUrl, i
             className="bg-white dark:bg-gray-800 p-4 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-              <button
-                onClick={() => setIsZoomed(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg">
+            {/* 添加一个关闭按钮在右上角 */}
+            <button
+              onClick={() => setIsZoomed(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors z-10 bg-white/50 dark:bg-gray-800/50 rounded-full p-1"
+              aria-label="Close diagram view"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg"> 
               {svgError ? (
                 <div>
                   <div className="text-red-500 mb-4">错误: {svgError}</div>
@@ -218,7 +220,7 @@ const DiagramViewer: React.FC<DiagramProps> = ({ svgContent, title, sourceUrl, i
                   className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
                 >
                   <ExternalLink className="w-4 h-4 mr-1" />
-                  查看BIAN原始文档
+                  View BIAN original document
                 </a>
               )}
             </div>

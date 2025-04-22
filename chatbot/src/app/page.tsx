@@ -46,16 +46,16 @@ const allPlaceholderOptions: PlaceholderOption[] = [
   { emoji: "🎓", text: "Training approaches for BIAN architecture and post-implementation maintenance? Recommended certifications?" },
   { emoji: "📈", text: "Key considerations for evolving BIAN architecture over time, considering digital transformation and landscape changes?" },
   // New diagram-focused questions
-  { emoji: "🔄", text: "Explain the interaction patterns between the Customer Onboarding Service Domain and related Service Domains within the BIAN framework. Illustrate these interaction points with a diagram." },
-  { emoji: "💳", text: "I need to design a BIAN-based payment processing system. Please provide a detailed structural diagram of the Payment Execution Service Domain and explain its integration approach with the Clearing and Settlement Service Domain." },
-  { emoji: "📋", text: "Show a relationship diagram for the Product Directory, Product Design, and Product Pricing Service Domains within BIAN. Explain how they collaborate to support Product Lifecycle Management." },
-  { emoji: "📡", text: "Explain the difference between the Request-Response and Notification patterns within BIAN Service Operations. Can you provide example diagrams illustrating these Service Domain interaction patterns?" },
-  { emoji: "🔒", text: "Present the BIAN Service Domain architecture diagram related to Risk Management, specifically showing the relationships and information flows between Fraud Detection, Compliance Check, and Transaction Authorization." },
-  { emoji: "🔐", text: "According to the BIAN framework, how should Digital Identity & Authentication and KYC (Know Your Customer) processes be implemented? Please provide diagrams of the involved Service Domains and typical interaction sequence diagrams." },
-  { emoji: "🌍", text: "I am designing a BIAN-based Open Banking API architecture. Please provide reference diagrams illustrating how an API Gateway interacts with relevant Service Domains, particularly focusing on the implementation approach for Account Information Services (AIS) and Payment Initiation Services (PIS)." },
-  { emoji: "📊", text: "Within the BIAN Service Domain decomposition model, how is the mapping relationship established between Business Scenarios and Service Domains? Can you provide a complete Service Domain constellation diagram for a Wealth Management business scenario?" },
-  { emoji: "📨", text: "Illustrate the event-driven service integration pattern within the BIAN reference architecture. Use a diagram to explain how the related event handling, event publishing, and subscription mechanisms support loosely coupled communication between different Service Domains." },
-  { emoji: "📱", text: "When implementing a BIAN architecture, what integration patterns should be followed for integrating the Core Banking System with Digital Channels? Please provide an integration reference diagram for the Channel Management, Customer Interaction, and Product Servicing Service Domains, explaining the boundaries and responsibility allocation between them." },
+  { emoji: "🔄", text: "Explain interaction patterns: Customer Onboarding & related Service Domains. Show diagram." },
+  { emoji: "💳", text: "Show structural diagram: Payment Execution Service Domain & integration with Clearing/Settlement for BIAN payment design." },
+  { emoji: "📋", text: "Show relationship diagram: Product Directory, Design, Pricing Service Domains. Explain collaboration for Product Lifecycle Management." },
+  { emoji: "📡", text: "Difference: Request-Response vs Notification patterns in BIAN Service Operations? Show example diagrams." },
+  { emoji: "🔒", text: "Present BIAN Service Domain diagram for Risk Management: relationships/flows between Fraud Detection, Compliance Check, Transaction Authorization." },
+  { emoji: "🔐", text: "How should BIAN implement Digital Identity, Authentication & KYC? Show diagrams of involved Service Domains & interaction sequences." },
+  { emoji: "🌍", text: "Show diagrams for BIAN Open Banking API architecture: API Gateway interaction with Service Domains for AIS & PIS." },
+  { emoji: "📊", text: "How are Business Scenarios mapped to Service Domains in BIAN? Show Service Domain constellation diagram for Wealth Management." },
+  { emoji: "📨", text: "Illustrate BIAN event-driven integration pattern with diagram. Explain how event handling/publishing/subscription support loosely coupled communication." },
+  { emoji: "📱", text: "BIAN integration patterns: Core Banking & Digital Channels? Show diagram for Channel Mgmt, Customer Interaction, Product Servicing domains." },
 ];
 
 // Function to get N random items from an array
