@@ -8,6 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+import requests
+import tarfile
+import shutil
 
 # 配置日志
 logging.basicConfig(
@@ -24,6 +27,89 @@ CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "/app/chroma_db/diagrams_db")
 os.makedirs(CHROMA_DB_PATH, exist_ok=True) 
 MODEL_NAME = "all-MiniLM-L6-v2"
 TOP_K = 1  # 默认返回的图表数量
+
+# 添加Google Drive下载函数
+def download_file_from_google_drive(file_id, destination):
+    """从Google Drive下载文件"""
+    URL = "https://drive.google.com/uc?export=download"
+    
+    session = requests.Session()
+    
+    # 初始请求获取确认令牌
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = None
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            token = value
+            break
+    
+    if token:
+        params = {'id': file_id, 'confirm': token}
+    else:
+        params = {'id': file_id}
+    
+    # 下载文件
+    response = session.get(URL, params=params, stream=True)
+    
+    # 保存文件
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(32768):
+            if chunk:
+                f.write(chunk)
+    
+    return destination
+
+def setup_database():
+    """设置数据库目录和文件"""
+    # 数据库标记文件路径
+    flag_file = os.path.join(CHROMA_DB_PATH, ".initialized")
+    
+    # 如果标记文件存在，说明数据库已初始化
+    if os.path.exists(flag_file):
+        logging.info("数据库已存在，跳过下载")
+        return
+    
+    try:
+        # 使用您的Google Drive文件ID
+        file_id = "11OcXDHVRZ00fvubR6XRKmusrb-gpjj27"
+        
+        # 临时下载路径
+        temp_file = "/tmp/chroma_db_diagrams.tar.gz"
+        temp_extract = "/tmp/extracted"
+        
+        logging.info("开始从Google Drive下载数据库...")
+        download_file_from_google_drive(file_id, temp_file)
+        logging.info("下载完成，开始解压...")
+        
+        # 创建临时提取目录
+        os.makedirs(temp_extract, exist_ok=True)
+        
+        # 解压文件
+        with tarfile.open(temp_file) as tar:
+            tar.extractall(path=temp_extract)
+        
+        # 确保目标目录存在
+        os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True)
+        
+        # 复制文件到目标位置
+        src_path = os.path.join(temp_extract, "chroma_db_diagrams")
+        if os.path.exists(CHROMA_DB_PATH):
+            shutil.rmtree(CHROMA_DB_PATH)
+        shutil.copytree(src_path, CHROMA_DB_PATH)
+        
+        # 创建标记文件
+        with open(flag_file, "w") as f:
+            f.write("initialized")
+        
+        logging.info(f"数据库成功设置到 {CHROMA_DB_PATH}")
+        
+        # 清理临时文件
+        os.remove(temp_file)
+        shutil.rmtree(temp_extract)
+        
+    except Exception as e:
+        logging.error(f"设置数据库时出错: {e}")
+        raise
 
 # 定义输入模型
 class RetrieveDiagramsRequest(BaseModel):
@@ -68,20 +154,26 @@ async def startup_event():
     global embedding_function, client, collection
     
     try:
+        # 首先设置数据库
+        setup_database()
+        
         logging.info(f"Loading embedding model: {MODEL_NAME}...")
-        # 直接使用模型名称初始化嵌入函数，而不是先加载模型
+        # 直接使用模型名称初始化嵌入函数
         embedding_function = SentenceTransformerEmbeddingFunction(model_name=MODEL_NAME)
         
         logging.info(f"Initializing ChromaDB client at path: {CHROMA_DB_PATH}")
-        # 确保父目录存在 (虽然上面也创建了，双重保险)
+        # 确保父目录存在
         os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True) 
         client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         
         logging.info(f"Getting collection: {COLLECTION_NAME}")
         # 获取数据集合
-        collection = client.get_collection(
-            name=COLLECTION_NAME
-        )
+        try:
+            collection = client.get_collection(name=COLLECTION_NAME)
+            logging.info(f"成功获取集合 {COLLECTION_NAME}")
+        except Exception as e:
+            logging.error(f"获取集合失败: {e}")
+            raise
         
         logging.info("Startup completed successfully.")
     except Exception as e:
