@@ -7,6 +7,8 @@ import remarkGfm from "remark-gfm";
 import { AlertCircle, ChevronDown, Trash2, RefreshCw, XCircle, Moon, Sun, Send, Menu, X, Info, ExternalLink, MessageSquare, Zap, Map, Globe } from "lucide-react";
 import { retrieveDiagrams, DiagramDocument } from "../services/diagramService";
 import DiagramViewer from "../components/DiagramViewer";
+import ChatMessage from '../components/ChatMessage';
+import { processCustomStream, StreamParserState, initialStreamParserState } from '../services/streamParser';
 
 interface PlaceholderOption {
   emoji: string;
@@ -122,7 +124,7 @@ const formatJSON = (obj: Record<string, unknown>) => {
 };
 
 export default function Page() {
-  const { messages, setMessages, input, handleInputChange, handleSubmit, isLoading, error, append } = useChat({
+  const { messages, setMessages, input, handleInputChange, isLoading: aiSdkLoading, error, append } = useChat({
     onError: (error) => {
       console.error("Chat error:", error);
       setErrorMessage(error.message || "An error occurred while processing your request.");
@@ -139,12 +141,7 @@ export default function Page() {
   const [showPlaceholders, setShowPlaceholders] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [randomPlaceholders, setRandomPlaceholders] = useState<PlaceholderOption[]>([]); // State for random placeholders
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const [darkMode, setDarkMode] = useState<boolean>(false); // 默认使用浅色主题作为初始值
   const [showHero, setShowHero] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showIntroPanel, setShowIntroPanel] = useState(true);
@@ -152,9 +149,31 @@ export default function Page() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [diagramsByMessageId, setDiagramsByMessageId] = useState<Record<string, DiagramDocument[]>>({});
   
+  // 添加自定义加载状态
+  const [isLoading, setIsLoading] = useState(false);
+  
   const resourcesDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Toggle dark mode
+  // 添加新的状态用于方案B流处理
+  const [streamStates, setStreamStates] = useState<Record<string, StreamParserState>>({});
+  
+  // 在客户端检测首选的颜色方案并相应地设置暗色模式
+  useEffect(() => {
+    // 检查系统颜色首选项
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setDarkMode(isDarkMode);
+    
+    // 添加颜色方案变化的监听器
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setDarkMode(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []); // 空依赖数组确保这只在客户端首次渲染时运行
+
+  // Toggle dark mode - 保留这个功能
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -167,17 +186,6 @@ export default function Page() {
   useEffect(() => {
     setRandomPlaceholders(getRandomItems(allPlaceholderOptions, 5));
   }, []); // Empty dependency array ensures this runs only once on mount
-
-  // Listen for system color scheme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setDarkMode(e.matches);
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -243,6 +251,7 @@ export default function Page() {
     setShowPlaceholders(true);
     setErrorMessage(null);
     setShowIntroPanel(true);
+    setStreamStates({}); // 清空流状态
   };
 
   const scrollToBottom = () => {
@@ -285,26 +294,143 @@ export default function Page() {
     setShowIntroPanel(false);
     
     try {
-      await append({
-        role: "user",
-        content: option.text,
+      // 设置加载状态
+      setIsLoading(true);
+      
+      // 创建唯一ID
+      const messageId = Date.now().toString();
+      
+      // 创建用户消息并添加到消息列表
+      const userMessage: Message = { id: messageId, role: "user", content: option.text };
+      
+      // 更新消息
+      setMessages((prev) => [...prev, userMessage]);
+      
+      // 初始化助手消息
+      const assistantMessageId = messageId + "_assistant";
+      setMessages((prev) => [...prev, { id: assistantMessageId, role: "assistant", content: "" } as Message]);
+      
+      // 初始化流状态
+      setStreamStates((prev) => ({
+        ...prev,
+        [assistantMessageId]: { ...initialStreamParserState }
+      }));
+      
+      // 发送请求 - 使用 fetch 而非 append
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage] // 发送包含新用户消息的完整历史
+        })
       });
+      
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      
+      // 处理自定义流
+      await processCustomStream(response, (state) => {
+        setStreamStates((prev) => ({
+          ...prev,
+          [assistantMessageId]: state
+        }));
+        
+        // 更新消息内容
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg.id === assistantMessageId 
+              ? { ...msg, content: state.text } as Message
+              : msg
+          )
+        );
+      });
+
+      // 完成后关闭加载状态
+      setIsLoading(false);
+
     } catch (err: any) {
       console.error("Error sending placeholder message:", err);
       setErrorMessage(err.message || "An error occurred while processing your request.");
+      // 错误时也要关闭加载状态
+      setIsLoading(false);
     }
   };
 
+  // 自定义表单提交处理
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
     setErrorMessage(null);
     if (input.trim()) {
       setShowHero(false);
       setShowIntroPanel(false);
     }
+
     try {
-      await handleSubmit(event);
+      // 设置加载状态
+      setIsLoading(true);
+      
+      // 创建唯一ID
+      const messageId = Date.now().toString();
+      
+      // 创建用户消息并添加到消息列表
+      const userMessage: Message = { id: messageId, role: "user", content: input };
+      
+      // 清空输入框
+      const currentInput = input;
+      handleInputChange({ target: { value: "" } } as React.ChangeEvent<HTMLInputElement>);
+      
+      // 更新消息
+      setMessages((prev) => [...prev, userMessage]);
+      
+      // 初始化助手消息
+      const assistantMessageId = messageId + "_assistant";
+      setMessages((prev) => [...prev, { id: assistantMessageId, role: "assistant", content: "" } as Message]);
+      
+      // 初始化流状态
+      setStreamStates((prev) => ({
+        ...prev,
+        [assistantMessageId]: { ...initialStreamParserState }
+      }));
+      
+      // 发送请求
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, { role: "user", content: currentInput }]
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      
+      // 处理自定义流
+      await processCustomStream(response, (state) => {
+        setStreamStates((prev) => ({
+          ...prev,
+          [assistantMessageId]: state
+        }));
+        
+        // 更新消息内容
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg.id === assistantMessageId 
+              ? { ...msg, content: state.text } as Message
+              : msg
+          )
+        );
+      });
+      
+      // 完成后关闭加载状态
+      setIsLoading(false);
+      
     } catch (err: any) {
       setErrorMessage(err.message || "An error occurred while processing your request.");
+      // 错误时也要关闭加载状态
+      setIsLoading(false);
     }
   };
 
@@ -419,6 +545,57 @@ export default function Page() {
       </div>
     </div>
   );
+
+  // 渲染聊天消息
+  const renderMessage = (message: any, index: number) => {
+    const isUser = message.role === 'user';
+    const isLast = index === messages.length - 1;
+    
+    // 获取此消息的流状态（如果是AI回复）
+    const streamState = !isUser ? streamStates[message.id] : undefined;
+    
+    // 确定是否使用流加载指示器
+    const showLoading = !isUser && isLast && isLoading && (!streamState || !streamState.isComplete);
+    
+    return (
+      <div
+        key={message.id}
+        className={`flex prose prose-sm md:prose-base dark:prose-invert max-w-none flex-col ${isUser ? 'items-end' : 'items-start'} mb-6`}
+        data-message-id={message.id}
+      >
+        <div className="flex items-start w-full max-w-full sm:max-w-3xl">
+          <div
+            className={`w-full px-4 py-3 rounded-2xl ${
+              isUser
+                ? 'bg-blue-500 text-white dark:bg-blue-600'
+                : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
+            } ${
+              // 增加条件检查，如果是最后一条消息并且是加载中状态，则添加 "加载中" 样式
+              showLoading ? 'animate-pulse' : ''
+            }`}
+          >
+            {isUser ? (
+              <div className="prose dark:prose-invert whitespace-pre-wrap break-words">{message.content}</div>
+            ) : (
+              <>
+                {/* 使用条件渲染：在有图表时使用自定义ChatMessage组件，无图表时使用AI SDK原生Markdown渲染 */}
+                {streamState && streamState.diagrams && streamState.diagrams.length > 0 ? (
+                  <ChatMessage 
+                    content={message.content}
+                    diagrams={streamState.diagrams}
+                  />
+                ) : (
+                  <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none break-words prose-p:my-4 prose-ul:my-4 prose-ol:my-4">
+                    {message.content || (showLoading ? 'Thinking...' : '')}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={`flex flex-col min-h-screen ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -659,103 +836,10 @@ export default function Page() {
         <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className={`flex-1 overflow-y-auto relative scroll-smooth ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} ${showHero || messages.length === 0 ? 'py-6' : 'py-0'}`}
+          className={`flex-1 overflow-y-auto w-full relative scroll-smooth ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} ${showHero || messages.length === 0 ? 'py-6' : 'py-0'}`}
         >
-          <div className="max-w-3xl mx-auto space-y-6 p-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-4 p-5 rounded-lg shadow-sm transition-all duration-200 animate-fadeIn
-                  ${message.role === "user" 
-                    ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50" 
-                    : "bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"}`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0
-                    ${message.role === "user" 
-                      ? "bg-blue-500 text-white" 
-                      : "bg-indigo-500 text-white"}`}
-                >
-                  {message.role === "user" ? "👤" : "🤖"}
-                </div>
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <div className="prose prose-blue dark:prose-invert max-w-none">
-                    <div
-                      className={`[&>table]:w-full [&>table]:border-collapse [&>table]:my-4 [&>table>thead>tr]:border-b [&>table>thead>tr]:border-gray-300 dark:[&>table>thead>tr]:border-gray-700 [&>table>tbody>tr]:border-b [&>table>tbody>tr]:border-gray-200 dark:[&>table>tbody>tr]:border-gray-800 [&>table>*>tr>*]:p-2 [&>table>*>tr>*]:text-left [&>table>thead>tr>*]:font-semibold [&>table>tbody>tr>*]:align-top`}
-                    >
-                      <Markdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          a: ({ href, children }) => {
-                            const isFootnoteRef = /^\d+$/.test(children?.[0]?.toString());
-                            if (isFootnoteRef) {
-                              return (
-                                <a href={href} className="text-blue-600 dark:text-blue-400 hover:underline">
-                                  {children}
-                                </a>
-                              );
-                            }
-                            return (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 after:content-['_↗'] after:text-xs after:opacity-70"
-                              >
-                                {children}
-                              </a>
-                            );
-                          },
-                          code: ({ children }) => {
-                            return (
-                              <code className="bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5 text-sm font-mono text-blue-700 dark:text-blue-300">
-                                {children}
-                              </code>
-                            );
-                          },
-                          blockquote: ({ children }) => {
-                            return (
-                              <blockquote className="border-l-4 border-blue-500 dark:border-blue-600 pl-4 italic text-gray-700 dark:text-gray-300">
-                                {children}
-                              </blockquote>
-                            );
-                          },
-                        }}
-                      >
-                        {message.content}
-                      </Markdown>
-                    </div>
-                  </div>
-                  {/* Diagram Display Area - Placed below the main message content */}
-                  {diagramsByMessageId[message.id] && diagramsByMessageId[message.id].length > 0 && (
-                    <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                      <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                        <Map className="w-4 h-4" /> 
-                        Related Diagrams:
-                      </h4>
-                      <div className="space-y-3">
-                        {diagramsByMessageId[message.id].map((diagram, index) => (
-                          <DiagramViewer
-                            key={`${message.id}-diag-${index}`} // Unique key for each diagram
-                            svgContent={diagram.svg_content}
-                            title={diagram.source_display_name || `Diagram ${index + 1}`} // Provide fallback title
-                            sourceUrl={diagram.source_url}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {/* End Diagram Display Area */}
-                  <button
-                    onClick={() => setSelectedMessage(message)}
-                    className="mt-3 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex items-center gap-1"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="mx-auto w-full px-4 lg:max-w-4xl">
+            {messages.map((message, index) => renderMessage(message, index))}
             
             {errorMessage && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3 animate-fadeIn">
@@ -770,16 +854,6 @@ export default function Page() {
                 >
                   <XCircle className="w-5 h-5" />
                 </button>
-              </div>
-            )}
-            
-            {isLoading && !errorMessage && (
-              <div className="flex justify-center items-center py-4 animate-fadeIn">
-                <div className="relative">
-                  <div className="animate-ping absolute h-8 w-8 rounded-full bg-blue-400 opacity-75"></div>
-                  <div className="animate-spin relative rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-                <span className="ml-3 text-gray-600 dark:text-gray-300">Processing your request...</span>
               </div>
             )}
             

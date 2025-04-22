@@ -25,12 +25,35 @@ interface RetrievalContext {
   [key: string]: any; // Allow for additional properties
 }
 
+// 定义图表文档的结构
+interface DiagramDocument {
+  text: string;
+  filename: string;
+  source_display_name: string;
+  svg_content: string;
+  source_url: string;
+  metadata: Record<string, any>;
+  [key: string]: any;
+}
+
+// 定义图表检索结果的结构
+interface DiagramRetrievalResponse {
+  documents: DiagramDocument[];
+}
+
 // 使用API提供的类型定义简化自定义接口
 interface GroundingMetadata {
   searchEntryPoint?: SearchEntryPoint;
   groundingChunks?: ApiGroundingChunk[];
   groundingSupports?: ApiGroundingSupport[];
   webSearchQueries?: string[];
+}
+
+// 定义图表分析结果的结构
+interface DiagramAnalysisResult {
+  needDiagram: boolean;
+  keywords: string;
+  reasoning: string;
 }
 
 export async function POST(req: Request) {
@@ -174,19 +197,10 @@ Output only the rewritten English query string.
       );
     }
 
-    // 在retrieveData调用之后添加
-    let diagramContext = { documents: [] };
-    try {
-      // 使用同一个重写后的查询检索图表
-      diagramContext = await retrieveDiagrams(rewrittenQuery, 3);
-      console.log(`Retrieved ${diagramContext.documents?.length || 0} relevant diagrams`);
-    } catch (diagramError) {
-      console.error("Error retrieving diagrams:", diagramError);
-      // 错误处理但继续流程
-    }
-
-    // 将图表整合到提示中
-    // 在准备finalAnswerPrompt之前添加图表相关内容到formattedDocuments
+    // ===== 方案B：第一次Gemini调用 (生成初步答案) =====
+    console.log("生成初步答案...");
+    
+    // 格式化检索到的文档，准备用于LLM提示
     let formattedDocuments = "";
     let documentSources: {title: string, link: string}[] = [];
     
@@ -260,17 +274,11 @@ Output only the rewritten English query string.
       }).join('\n\n');
     }
 
-    // 如果图表上下文可用，添加图表相关内容到formattedDocuments
-    if (diagramContext.documents && diagramContext.documents.length > 0) {
-      const diagramSections = diagramContext.documents.map((diagram, index) => {
-        return `[DIAGRAM ${index + 1}]: ${diagram.text}\n<svg available: true, source: ${diagram.source_url}>`;
-      }).join('\n\n');
-      
-      formattedDocuments += '\n\n--- Related BIAN Diagrams ---\n' + diagramSections;
-    }
-
-    // Prepare the final answer generation prompt
-    const finalAnswerPrompt = `
+    // ===== 方案B：第一次Gemini调用 (生成初步答案) =====
+    console.log("生成初步答案...");
+    
+    // 准备初步答案生成的提示词
+    const initialAnswerPrompt = `
 # ROLE
 You are an expert BIAN (Banking Industry Architecture Network) specialist with deep knowledge of banking architectures and financial technology standards.
 
@@ -281,14 +289,11 @@ Provide a comprehensive, accurate, and professional answer about BIAN, covering 
 - Synthesize information from:
   1. Your internal BIAN knowledge base
   2. The provided document excerpts 
-  3. The relevant BIAN diagrams (if available)
-  4. Latest information obtained through Google search
+  3. Latest information obtained through Google search
 - Prioritize accuracy and professionalism
 - Always use proper citations when referencing information:
   - For BIAN documents: use [Doc#] format
-  - For BIAN diagrams: use [DIAGRAM#] format
   - For web references: use appropriate citations
-- When relevant diagrams are available, mention them specifically and describe their relevance
 - Structure your answer with clear headings, lists, and tables for improved readability
 - Include relevant examples where appropriate
 - Provide a concise but comprehensive answer in English
@@ -306,14 +311,290 @@ ${formattedDocuments}
 Generate a comprehensive and authoritative BIAN-related answer, with appropriate citations to reliable sources. Use web search for additional information when needed.
 `;
 
-    // Generate the final answer
-    console.log(`Sending prompt to ${model} API with Web Grounding enabled...`);
-    const result = await generativeModel.generateContent(finalAnswerPrompt);
-    console.log(`Received response from ${model} API`);
+    // 调用Gemini生成初步答案
+    const initialResult = await generativeModel.generateContent(initialAnswerPrompt);
+    console.log(`初步答案生成完成`);
     
-    // 提取响应文本和Web Grounding信息
-    let responseText = "";
+    // 提取初步答案内容和Web Grounding信息
+    let initialAnswer = "";
     let groundingData: GroundingMetadata | null = null;
+
+    if (initialResult && initialResult.response) {
+      try {
+        if (initialResult.response.candidates && initialResult.response.candidates.length > 0) {
+          const candidate = initialResult.response.candidates[0];
+          
+          // 提取响应文本
+          if (candidate?.content?.parts?.length > 0) {
+            initialAnswer = candidate.content.parts
+              .map(part => {
+                try {
+                  const anyPart = part as any;
+                  if (typeof anyPart.text === 'string') {
+                    return anyPart.text;
+                  } else if (anyPart.text && typeof anyPart.text === 'object' && typeof anyPart.text.toString === 'function') {
+                    return anyPart.text.toString();
+                  }
+                } catch (e) {
+                  console.warn("Error accessing part.text:", e);
+                }
+                return '';
+              })
+              .filter(text => text)
+              .join('\n');
+          }
+          
+          // 如果初步答案为空，尝试其他方法提取
+          if (!initialAnswer || initialAnswer.trim() === '') {
+            console.warn("Empty initialAnswer extracted from Gemini API");
+            
+            try {
+              const anyContent = candidate.content as any;
+              if (anyContent && typeof anyContent.text === 'function') {
+                initialAnswer = anyContent.text();
+              }
+            } catch (e) {
+              console.warn("Error accessing content.text:", e);
+            }
+            
+            try {
+              const anyCandidate = candidate as any;
+              if (anyCandidate && typeof anyCandidate.text === 'function') {
+                initialAnswer = anyCandidate.text();
+              }
+            } catch (e) {
+              console.warn("Error accessing candidate.text:", e);
+            }
+          }
+          
+          // 提取Web Grounding元数据
+          if (candidate?.groundingMetadata) {
+            groundingData = {
+              searchEntryPoint: candidate.groundingMetadata.searchEntryPoint,
+              groundingChunks: candidate.groundingMetadata.groundingChunks,
+              groundingSupports: candidate.groundingMetadata.groundingSupports,
+              webSearchQueries: candidate.groundingMetadata.webSearchQueries,
+            };
+          }
+        } else if (initialResult.response.text && typeof initialResult.response.text === "function") {
+          initialAnswer = initialResult.response.text();
+        } else if (typeof initialResult.response === "string") {
+          initialAnswer = initialResult.response;
+        } else {
+          try {
+            initialAnswer = JSON.stringify(initialResult.response);
+          } catch (stringifyError) {
+            console.error("Error stringifying response:", stringifyError);
+            throw new Error("Cannot extract text from response in any way");
+          }
+        }
+      } catch (extractionError: unknown) {
+        console.error("Error extracting text from Gemini response:", extractionError);
+        return new Response(
+          JSON.stringify({
+            error: `Failed to extract text from ${model} API response: ${extractionError instanceof Error ? extractionError.message : 'Unknown error'}`
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // 确保我们有有效的初步答案
+    if (!initialAnswer || initialAnswer.trim() === "") {
+      console.error("All extraction methods failed, no valid text extracted from API for initial answer");
+      return new Response(
+        JSON.stringify({
+          error: "Failed to generate initial answer."
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`初步答案长度: ${initialAnswer.length} 字符`);
+
+    // ===== 方案B：第二次Gemini调用 (图表需求分析和关键词生成) =====
+    console.log("分析图表需求和生成关键词...");
+    
+    // 准备图表需求分析的提示词
+    const diagramAnalysisPrompt = `
+# ROLE
+You are an expert BIAN banking architecture diagram analyst, specialized in determining when relevant BIAN diagrams would enhance an answer.
+
+# TASK
+Analyze the user's question and the initial answer to determine if diagrams would be helpful. If so, generate 3-5 precise search keywords to retrieve relevant BIAN diagrams.
+
+# REQUIREMENTS
+- First, analyze if any BIAN diagrams would genuinely enhance the answer
+- Consider diagrams useful when explaining:
+  * Service domain relationships
+  * Business object models
+  * Process flows
+  * System architecture layers
+  * Integration patterns
+  * Control mechanisms
+- If diagrams would help, generate 3-5 specific BIAN keywords or phrases for diagram retrieval
+- Return ONLY the JSON object containing your analysis. DO NOT include markdown code fences (like \`\`\`json) or any text outside the JSON structure.
+
+# INPUT
+User Question: "${originalUserQuestion}"
+
+Initial Answer Preview:
+"""
+${initialAnswer.substring(0, Math.min(2000, initialAnswer.length))}
+${initialAnswer.length > 2000 ? '...' : ''}
+"""
+
+# OUTPUT
+Return ONLY a valid JSON object with the following structure. NO MARKDOWN, NO EXTRA TEXT.
+{
+  "needDiagram": true/false,
+  "keywords": "keyword1, keyword2, keyword3", (only if needDiagram is true)
+  "reasoning": "Brief explanation of your decision"
+}
+`;
+
+    // 调用Gemini分析图表需求
+    const diagramAnalysisResult = await generativeModel.generateContent(diagramAnalysisPrompt);
+    let diagramAnalysis: DiagramAnalysisResult = { needDiagram: false, keywords: "", reasoning: "" };
+    
+    try {
+      if (diagramAnalysisResult && diagramAnalysisResult.response) {
+        let analysisText = diagramAnalysisResult.response.text();
+        
+        // 清理可能存在的Markdown标记
+        if (analysisText.startsWith("```json")) {
+          analysisText = analysisText.substring(7);
+        }
+        if (analysisText.endsWith("```")) {
+          analysisText = analysisText.substring(0, analysisText.length - 3);
+        }
+        analysisText = analysisText.trim(); // 移除可能的首尾空格
+        
+        diagramAnalysis = JSON.parse(analysisText) as DiagramAnalysisResult;
+        console.log("图表分析结果:", diagramAnalysis);
+      }
+    } catch (analysisError) {
+      console.error("Error parsing diagram analysis:", analysisError);
+      // 输出原始文本以便调试
+      if (diagramAnalysisResult?.response) {
+        console.error("原始分析文本:", diagramAnalysisResult.response.text());
+      }
+      // 出错时默认不需要图表，继续流程
+      console.log("默认不使用图表，继续生成最终答案");
+    }
+
+    // ===== 方案B：条件性图表检索 =====
+    // 仅在需要图表时检索图表
+    const emptyDiagramResponse: DiagramRetrievalResponse = { documents: [] };
+    let diagramContext: DiagramRetrievalResponse = emptyDiagramResponse;
+    
+    if (diagramAnalysis.needDiagram && diagramAnalysis.keywords) {
+      console.log(`需要图表，使用关键词检索: "${diagramAnalysis.keywords}"`);
+      
+      try {
+        // 使用LLM生成的关键词检索图表
+        diagramContext = await retrieveDiagrams(diagramAnalysis.keywords, 3);
+        console.log(`检索到 ${diagramContext.documents.length} 个相关图表`);
+        
+        // 新增：验证检索到的图表数据
+        diagramContext.documents.forEach((doc, idx) => {
+          console.log(`检索到的图表 ${idx+1}: ${doc.source_display_name || doc.filename || 'unnamed'}`);
+          if (!doc.svg_content) {
+            console.error(`图表 ${idx+1} 缺少svg_content字段!`);
+          } else if (doc.svg_content.length < 50) {
+            console.error(`图表 ${idx+1} svg_content异常短: ${doc.svg_content.length}字符`);
+            console.error(`SVG内容前50字符: ${doc.svg_content.substring(0, 50)}`);
+          } else {
+            console.log(`图表 ${idx+1} SVG内容长度: ${doc.svg_content.length}字符`);
+          }
+        });
+      } catch (diagramError) {
+        console.error("Error retrieving diagrams:", diagramError);
+        // 错误处理但继续流程
+      }
+    } else {
+      console.log("不需要图表，跳过图表检索步骤");
+    }
+
+    // ===== 方案B：添加图表信息到最终提示 =====
+    // 如果有图表上下文，添加到提示中
+    let diagramSections = "";
+    
+    if (diagramContext.documents && diagramContext.documents.length > 0) {
+      console.log(`处理 ${diagramContext.documents.length} 个图表数据，准备添加到响应中`);
+      
+      // 验证图表SVG内容
+      diagramContext.documents.forEach((doc, idx) => {
+        if (!doc.svg_content || doc.svg_content.length < 50) {
+          console.warn(`图表 ${idx+1} SVG内容异常，长度: ${doc.svg_content?.length || 0}`);
+        } else if (!doc.svg_content.includes('<svg')) {
+          console.warn(`图表 ${idx+1} 不包含有效的SVG标签`);
+        } else {
+          const svgLength = doc.svg_content.length;
+          console.log(`图表 ${idx+1} SVG长度: ${svgLength} 字符, 标题: ${doc.source_display_name || doc.filename || "未命名"}`);
+        }
+      });
+
+      diagramSections = diagramContext.documents.map((diagram, index) => {
+        return `[DIAGRAM ${index + 1}]: ${diagram.text}\n<svg available: true, source: ${diagram.source_url || "unknown"}>`;
+      }).join('\n\n');
+      
+      formattedDocuments += '\n\n--- Related BIAN Diagrams ---\n' + diagramSections;
+    }
+
+    // ===== 方案B：第三次Gemini调用 (最终答案重写与融合) =====
+    console.log("生成最终答案...");
+    
+    // 如果有图表，准备最终答案重写的提示，包含图表融合
+    let finalAnswerPrompt;
+    
+    if (diagramContext.documents && diagramContext.documents.length > 0) {
+      finalAnswerPrompt = `
+# ROLE
+You are an expert BIAN (Banking Industry Architecture Network) specialist with deep knowledge of banking architectures and financial technology standards.
+
+# TASK
+Enhance the initial answer by integrating relevant BIAN diagrams to provide a more comprehensive and visual explanation.
+
+# REQUIREMENTS
+- Start with the initial answer and improve it by incorporating references to relevant diagrams
+- When referencing diagrams, use the format: [See Diagram X: Title]
+- Explain how each referenced diagram relates to the answer
+- Position diagram references at appropriate points in the text
+- Maintain the professional tone and accuracy of the original answer
+- Keep all original citations and references intact
+- Keep the same overall structure but enhance with diagram references
+- Do not add any images or SVG code directly - only use references
+- Diagrams should only be referenced where they genuinely enhance understanding
+
+# INPUT
+User's Original Question: "${originalUserQuestion}"
+
+Initial Answer:
+"""
+${initialAnswer}
+"""
+
+Available BIAN Diagrams:
+${diagramContext.documents.map((diagram, index) => 
+  `Diagram ${index + 1}: ${diagram.source_display_name || diagram.filename || `BIAN Diagram ${index + 1}`}\n${diagram.text}`
+).join('\n\n')}
+
+# OUTPUT
+Generate an enhanced version of the initial answer that integrates references to the relevant diagrams where appropriate.
+`;
+    } else {
+      // 没有图表时使用初步答案
+      finalAnswerPrompt = initialAnswerPrompt;
+    }
+
+    // 生成最终答案（如果有图表则融合图表，否则使用初步答案作为最终答案）
+    const result = await generativeModel.generateContent(finalAnswerPrompt);
+    console.log(`最终答案生成完成`);
+    
+    // 提取最终答案文本和Web Grounding信息
+    let responseText = "";
+    groundingData = null; // 重置为最终答案的groundingData
 
     if (result && result.response) {
       try {
@@ -446,283 +727,36 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       );
     }
 
-    // 确保我们有有效的响应文本
+    // 如果最终答案提取失败，回退到初步答案
     if (!responseText || responseText.trim() === "") {
-      console.error("All extraction methods failed, no valid text extracted from API response");
-      return new Response(
-        JSON.stringify({
-          error: "Failed to extract any valid content from model response."
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      console.warn("Failed to extract final answer, falling back to initial answer");
+      responseText = initialAnswer;
     }
 
     // 保存原始响应文本，用于最后检查
     const originalResponseText = responseText;
     console.log("Original response length:", originalResponseText.length);
 
-    // 处理引用信息，添加到响应文本 - 修改为英文输出
-    if (documentSources.length > 0 || (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0)) {
-      // 添加分隔符和引用标题前，确保有足够的空行
-      if (!responseText.endsWith("\n\n")) {
-        // 如果文本不以两个换行符结束，添加额外的换行符
-        responseText += responseText.endsWith("\n") ? "\n" : "\n\n";
-      }
-      
-      // 添加引用信息到响应 - 使用英文
-      responseText += "---\n### References\n";
-      
-      // 首先添加RAG文档引用 - 使用英文并改进去重逻辑
-      if (documentSources.length > 0) {
-        responseText += "\n#### BIAN Knowledge Base Documents\n";
-        
-        // 创建一个Map来跟踪已添加的文档，使用标准化的URL作为键
-        const addedDocuments = new Map();
-        
-        // 处理文档源并去重
-        documentSources.forEach((source, index) => {
-          // 提取文档真实名称
-          let cleanTitle = source.title || `BIAN Document ${index + 1}`;
-          
-          // 标准化链接URL以便更好地去重
-          let normalizedLink = source.link.replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
-          
-          // 如果这个URL已经添加过，跳过
-          if (addedDocuments.has(normalizedLink)) {
-            return;
-          }
-          
-          // 特殊处理BIAN特定链接格式
-          if (normalizedLink.includes('bian.org')) {
-            // 对于BIAN官方文档，进行更精确的链接处理
-            
-            // 提取BIAN文档类型和识别符，以生成最合适的链接格式
-            const isBianDocument = (
-              cleanTitle.toLowerCase().includes('bian') || 
-              normalizedLink.includes('bian.org')
-            );
-            
-            if (isBianDocument) {
-              // 识别BIAN文档的不同类型
-              const isServiceDomain = (
-                cleanTitle.includes('Service Domain') || 
-                cleanTitle.includes('SD ') ||
-                cleanTitle.match(/\bSD\b/)
-              );
-              
-              const isGuide = (
-                cleanTitle.includes('Guide') || 
-                cleanTitle.includes('Handbook') || 
-                cleanTitle.includes('Guidelines')
-              );
-              
-              const isAPISpec = (
-                cleanTitle.includes('API') || 
-                cleanTitle.includes('Specification') ||
-                cleanTitle.includes('Semantic API')
-              );
-              
-              // 提取数字ID（如果存在）
-              const numericIdMatch = cleanTitle.match(/\d{7,}/);
-              const hasNumericId = numericIdMatch !== null;
-              
-              // 根据文档类型生成最合适的链接
-              if (hasNumericId) {
-                // 如果有数字ID，优先使用它构建语义API文档链接
-                const numericId = numericIdMatch![0];
-                normalizedLink = `bian.org/semantic-apis/document/${numericId}`;
-                source.link = `https://${normalizedLink}`;
-              } 
-              else if (isServiceDomain) {
-                // 处理服务域文档
-                const sdName = cleanTitle
-                  .replace(/Service Domain/i, '')
-                  .replace(/\bSD\b/i, '')
-                  .trim()
-                  .replace(/\s+/g, '-')
-                  .toLowerCase();
-                
-                normalizedLink = `bian.org/servicelandscape/service-domains/${sdName}`;
-                source.link = `https://${normalizedLink}`;
-              }
-              else if (isAPISpec) {
-                // 处理API规范文档
-                const apiName = cleanTitle
-                  .replace(/API|Specification|Semantic/ig, '')
-                  .trim()
-                  .replace(/\s+/g, '-')
-                  .toLowerCase();
-                
-                normalizedLink = `bian.org/semantic-apis/apis/${apiName}`;
-                source.link = `https://${normalizedLink}`;
-              }
-              else if (isGuide) {
-                // 处理指南类文档
-                const guideName = cleanTitle
-                  .replace(/Guide|Handbook|Guidelines/ig, '')
-                  .trim()
-                  .replace(/\s+/g, '-')
-                  .toLowerCase();
-                
-                normalizedLink = `bian.org/servicelandscape/guidelines/${guideName}`;
-                source.link = `https://${normalizedLink}`;
-              }
-              else {
-                // 处理其他BIAN文档
-                const docId = cleanTitle
-                  .replace(/BIAN/i, '')
-                  .trim()
-                  .replace(/\s+/g, '-')
-                  .toLowerCase();
-                
-                normalizedLink = `bian.org/deliverables/${docId}`;
-                source.link = `https://${normalizedLink}`;
-              }
-            }
-          }
-          
-          // 记录这个文档已经被添加，并存储引用编号
-          const referenceNumber = addedDocuments.size + 1;
-          addedDocuments.set(normalizedLink, referenceNumber);
-          
-          // 添加到引用列表 - 移除链接，只显示序号和标题
-          responseText += `[${referenceNumber}] ${cleanTitle}\n`;
-        });
-      }
-      
-      // 获取已添加的文档引用数量
-      let referenceCounter = documentSources.length > 0 ? 
-                            new Map(documentSources.map(s => 
-                              [s.link.replace(/^https?:\/\/(www\.)?/, '').toLowerCase(), true]
-                            )).size : 0;
-      
-      // 改进Web Search引用处理
-      if (groundingData && groundingData.groundingChunks && groundingData.groundingChunks.length > 0) {
-        // 提取web引用并改进URL处理
-        let webReferences = groundingData.groundingChunks
-          .filter(chunk => chunk.web && chunk.web.uri)
-          .map(chunk => {
-            // 修复和标准化grounding链接
-            let uri = chunk.web?.uri || "";
-            let title = chunk.web?.title || "Web Reference";
-            
-            // 处理Google Vertex AI Search的代理链接
-            if (uri.includes('vertexaisearch.cloud.google.com/grounding-api-redirect')) {
-              // 更精确地提取目标URL
-              try {
-                // 尝试构建URL对象并提取url参数
-                const urlObj = new URL(uri);
-                const urlParam = urlObj.searchParams.get('url');
-                
-                if (urlParam) {
-                  // 如果有URL参数，直接使用
-                  uri = urlParam;
-                  
-                  // 进一步尝试解码嵌套URL（有时URL会被多重编码）
-                  try {
-                    const decodedUrl = decodeURIComponent(uri);
-                    if (decodedUrl !== uri && decodedUrl.startsWith('http')) {
-                      uri = decodedUrl;
-                    }
-                  } catch (decodeError) {
-                    // 解码失败，保持原样
-                    console.warn("Failed to decode nested URL:", decodeError);
-                  }
+    // ===== 方案B：流式响应添加图表数据 =====
+    // 创建包含图表数据的自定义流
+    const streamData = new TextEncoder();
+    const diagramData = diagramContext.documents.map((doc, index) => ({
+      index: index + 1,
+      title: doc.source_display_name || doc.filename || `BIAN Diagram ${index + 1}`,
+      svg_content: doc.svg_content, // 注意：这里使用svg_content匹配前端DiagramDocument类型
+      source_url: doc.source_url
+    }));
+    
+    // 验证转换后的图表数据
+    diagramData.forEach((diagram, idx) => {
+      if (!diagram.svg_content || diagram.svg_content.length < 50) {
+        console.warn(`转换后的图表 ${idx+1} SVG数据异常短或为空，长度: ${diagram.svg_content?.length || 0}`);
+      } else if (typeof diagram.svg_content === 'string' && !diagram.svg_content.includes('<svg')) {
+        console.warn(`转换后的图表 ${idx+1} 可能不包含有效的SVG标签`);
                 } else {
-                  // 否则尝试从路径中提取域名
-                  const domainMatch = uri.match(/\/(www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
-                  if (domainMatch && domainMatch[1]) {
-                    uri = `https://${domainMatch[1]}`;
-                  } else {
-                    // 尝试另一种格式提取域名
-                    const altDomainMatch = uri.match(/\/([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
-                    if (altDomainMatch && altDomainMatch[1]) {
-                      uri = `https://${altDomainMatch[1]}`;
-                    }
-                  }
-                }
-              } catch (urlError) {
-                // URL解析失败，回退到正则表达式方法
-                console.warn("Failed to parse redirect URL:", urlError);
-                
-                // 尝试从路径中提取域名
-                const domainMatch = uri.match(/\/(www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
-                if (domainMatch && domainMatch[1]) {
-                  uri = `https://${domainMatch[1]}`;
-                } else {
-                  // 尝试另一种格式提取域名
-                  const altDomainMatch = uri.match(/\/([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/);
-                  if (altDomainMatch && altDomainMatch[1]) {
-                    uri = `https://${altDomainMatch[1]}`;
-                  }
-                }
-              }
-            }
-            
-            // 清理和规范化标题
-            if (title) {
-              // 移除过长标题中的噪音内容
-              if (title.length > 70) {
-                title = title.substring(0, 67) + '...';
-              }
-              
-              // 移除标题中可能的HTML元素
-              title = title.replace(/<[^>]*>/g, '');
-            }
-            
-            return {
-              title: title,
-              uri: uri,
-            };
-          });
-          
-        // 使用Map进行更高效的去重，以URL为键
-        const uniqueUrls = new Map();
-        webReferences.forEach(ref => {
-          // 标准化URL
-          const normalizedUrl = ref.uri.replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
-          
-          // 只保留每个URL的第一个引用
-          if (!uniqueUrls.has(normalizedUrl)) {
-            uniqueUrls.set(normalizedUrl, ref);
-          }
-        });
-        
-        // 从Map转换回数组
-        webReferences = Array.from(uniqueUrls.values());
-        
-        if (webReferences.length > 0) {
-          responseText += "\n#### Web Resources\n";
-          webReferences.forEach((ref) => {
-            referenceCounter++;
-            // 移除Web资源链接，只显示序号和标题
-            responseText += `[${referenceCounter}] ${ref.title}\n`;
-          });
-        }
+        console.log(`转换后的图表 ${idx+1} SVG有效，长度: ${typeof diagram.svg_content === 'string' ? diagram.svg_content.length : 'undefined'}`);
       }
-      
-      // 改进搜索建议的处理和显示
-      if (groundingData && groundingData.webSearchQueries && groundingData.webSearchQueries.length > 0) {
-        // 过滤和去重搜索建议
-        const uniqueQueries = [...new Set(groundingData.webSearchQueries
-          .filter(query => query && query.trim().length > 0)
-          .map(query => query.trim())
-        )]; 
-        
-        if (uniqueQueries.length > 0) {
-          responseText += "\n### Related Search Topics\n";
-          uniqueQueries.forEach(query => {
-            // 确保查询内容是有意义的
-            if (query.length > 3 && !query.includes("undefined")) {
-              responseText += `- ${query}\n`;
-            }
-          });
-        }
-      }
-      
-      // 改进归因信息的显示格式
-      responseText += "\n\n*Information sourced from BIAN Architecture documents and web resources*";
-    }
+    });
 
     // 检查是否发生了内容丢失（通过比较原始响应和最终响应的长度）
     const originalLength = originalResponseText.length;
@@ -730,53 +764,50 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
     
     console.log(`Response length check: Original=${originalLength}, Final=${finalLength}, Ratio=${finalLength/originalLength}`);
     
-    if (originalLength > 100 && finalLength > originalLength * 1.1) {
-      console.log("Response appears to have references successfully appended");
-    } else if (originalLength > 100 && finalLength < originalLength * 1.1) {
-      console.warn("Possible content loss detected - final response not significantly longer than original");
+    // 移除末尾的图表引用内容
+    const diagramsSectionPattern = /\n\n(?:---\n)?### BIAN Diagrams[\s\S]*$/;
+    if (responseText.match(diagramsSectionPattern)) {
+      responseText = responseText.replace(diagramsSectionPattern, '');
+      console.log('移除了文本末尾的图表引用部分');
     }
-
-    // Add logging for debugging
-    console.log("Final response text length:", responseText.length);
-    console.log("Response text first 100 chars:", responseText.substring(0, 100));
-    console.log("Response text last 100 chars:", responseText.substring(responseText.length - 100));
-
-    // 优化流式响应处理
-    if (!responseText || responseText.trim() === "") {
-      console.error("Empty response text detected, returning error");
-      return new Response(
-        JSON.stringify({
-          error: "Generated empty response from the model. Please try again."
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Streaming Response: Create a stream from the responseText
+    
+    // 准备流式响应，包含文本和图表数据
     const readableStream = new ReadableStream({
       start(controller) {
         try {
-          // 为流式传输准备响应文本
-          // 使用安全的序列化方法，保持格式和换行符
+          // 不要使用JSON.stringify，直接编码原始文本以保留Markdown格式
+          const content = responseText;
+          const textEncoder = new TextEncoder();
           
-          // 使用JSON.stringify来处理特殊字符
-          const serialized = JSON.stringify(responseText);
+          // 构建AI SDK格式的文本数据块
+          const textChunk = `0:"${content.replace(/"/g, '\\"')}"\n`;
+          controller.enqueue(textEncoder.encode(textChunk));
           
-          // 移除JSON序列化添加的首尾双引号
-          const content = serialized.slice(1, -1);
-          
-          // 构建AI SDK格式的数据块
-          const formattedChunk = `0:"${content}"\n`;
-          
-          // 记录发送的数据大小
-          console.log(`Sending response chunk of size: ${formattedChunk.length} bytes`);
-          
-          // 发送数据
-          controller.enqueue(new TextEncoder().encode(formattedChunk));
-          
-          // 记录但不添加搜索元数据
-          if (groundingData && groundingData.searchEntryPoint && groundingData.searchEntryPoint.renderedContent) {
-            console.log("Search entry point data is available for frontend rendering");
+          // 如果有图表数据，添加到流中
+          if (diagramData.length > 0) {
+            // 添加日志输出
+            console.log(`正在将 ${diagramData.length} 个图表添加到流响应中`);
+            
+            // 验证每个图表的SVG内容
+            diagramData.forEach((diagram, idx) => {
+              console.log(`流响应中的图表 ${idx + 1}: 标题=${diagram.title}, SVG长度=${diagram.svg_content?.length || 'undefined'}`);
+              if (!diagram.svg_content || !diagram.svg_content.includes('<svg')) {
+                console.warn(`流响应中的图表 ${idx + 1} SVG内容无效或为空`);
+              }
+            });
+            
+            // 使用自定义分隔符标记图表数据开始
+            const diagramStartMarker = `diagrams-start\n`;
+            controller.enqueue(textEncoder.encode(diagramStartMarker));
+            
+            // 添加图表数据（JSON序列化）
+            const diagramJsonChunk = JSON.stringify({diagrams: diagramData});
+            console.log(`图表JSON数据长度: ${diagramJsonChunk.length} 字符`);
+            controller.enqueue(textEncoder.encode(diagramJsonChunk));
+            
+            // 使用自定义分隔符标记图表数据结束
+            const diagramEndMarker = `\ndiagrams-end\n`;
+            controller.enqueue(textEncoder.encode(diagramEndMarker));
           }
           
           // 关闭流
@@ -788,14 +819,13 @@ Generate a comprehensive and authoritative BIAN-related answer, with appropriate
       }
     });
 
-    // Add log after successful stream creation
-    console.log("ReadableStream created successfully with AI SDK data format.");
-
-    // Return the stream using the standard Web API Response
+    // 返回包含图表数据的响应
     return new Response(readableStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'X-Experimental-Stream-Data': 'true' // Indicate AI SDK Stream Data format
+        'X-Experimental-Stream-Data': 'true',
+        'X-Has-Diagrams': diagramData.length > 0 ? 'true' : 'false',
+        'X-Diagrams-Count': diagramData.length.toString()
       }
     });
   } catch (error: any) {
@@ -851,9 +881,9 @@ const retrieveData = async (
 };
 
 const retrieveDiagrams = async (
-  question: string,
+  keywords: string,
   numResults: number = 3
-): Promise<{documents: any[]}> => {
+): Promise<DiagramRetrievalResponse> => {
   try {
     const diagramApiUrl = process.env.DIAGRAM_API_URL || "http://localhost:8000/retrieve_diagrams";
     
@@ -863,7 +893,7 @@ const retrieveDiagrams = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        question,
+        question: keywords, // 使用LLM生成的关键词而非原始问题
         numResults,
         rerank: true,
       }),
@@ -874,7 +904,38 @@ const retrieveDiagrams = async (
       throw new Error(`图表检索失败: ${response.status} ${response.statusText}. ${errorText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // 确保返回的数据符合DiagramRetrievalResponse接口
+    const result: DiagramRetrievalResponse = {
+      documents: Array.isArray(data.documents) 
+        ? data.documents.map((doc: any, index: number) => {
+            // 尝试从source_url提取更有意义的名称
+            let betterName = "BIAN Diagram";
+            
+            if (doc.source_url) {
+              // 从URL提取视图ID
+              const viewMatch = doc.source_url.match(/view_(\d+)\.html/);
+              if (viewMatch && viewMatch[1]) {
+                betterName = `BIAN Service Domain Diagram (View ${viewMatch[1]})`;
+              }
+            }
+            
+            // 也可以尝试从SVG内容中提取文本节点分析标题
+            
+            return {
+              text: doc.text || "",
+              filename: doc.filename || "",
+              source_display_name: betterName, // 使用改进的名称
+              svg_content: doc.svg_content || "",
+              source_url: doc.source_url || "",
+              metadata: doc.metadata || {}
+            };
+          })
+        : []
+    };
+    
+    return result;
   } catch (error) {
     console.error("Error retrieving diagrams:", error);
     return { documents: [] }; // 返回空数组，确保流程继续
