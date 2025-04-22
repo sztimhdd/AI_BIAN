@@ -96,22 +96,13 @@ def setup_database():
         # 解压后记录
         logging.info(f"解压完成，临时目录内容: {os.listdir(temp_extract)}")
         
-        # 记录源路径状态
-        src_path = os.path.join(temp_extract, "chroma_db_diagrams")
-        if os.path.exists(src_path):
-            logging.info(f"源路径存在: {src_path}")
-            logging.info(f"源路径内容: {os.listdir(src_path)[:10]}")
+        # 找到压缩包中的实际数据库目录
+        if os.path.exists(os.path.join(temp_extract, "chroma_db_diagrams")):
+            src_path = os.path.join(temp_extract, "chroma_db_diagrams")
         else:
-            logging.error(f"源路径不存在: {src_path}")
-            # 列出实际存在的路径
-            logging.error(f"实际存在的路径: {os.listdir(temp_extract)}")
-            
-            # 尝试找到实际的数据库目录
-            potential_paths = [os.path.join(temp_extract, d) for d in os.listdir(temp_extract) 
-                              if os.path.isdir(os.path.join(temp_extract, d))]
-            if potential_paths:
-                src_path = potential_paths[0]
-                logging.info(f"使用替代路径: {src_path}")
+            # 如果不是嵌套的，直接使用解压目录
+            src_path = temp_extract
+            logging.info(f"直接使用解压目录作为源: {src_path}")
         
         # 确保目标目录存在
         os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True)
