@@ -153,3 +153,14 @@ output_full.json # Add any specific output files you generate
 .idea/
 *.swp
 *.swo
+
+# New additions from the code block
+*.pyc
+*.pyo
+*.pyd
+.env*
+*.log
+/chroma_db/ # 忽略本地数据库目录 (持久化数据将在 Volume 中)
+venv/
+.venv/
+# 其他你可能有的虚拟环境目录

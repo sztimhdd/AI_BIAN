@@ -18,7 +18,12 @@ logging.basicConfig(
 
 # 常量定义
 COLLECTION_NAME = "bian_diagrams"
-CHROMA_DB_PATH = "./chroma_db_diagrams"
+# CHROMA_DB_PATH = "./chroma_db_diagrams" # 旧路径
+# 从环境变量获取挂载路径，默认为本地路径
+CHROMA_DB_VOLUME_MOUNT_PATH = os.getenv("CHROMA_VOLUME_MOUNT_PATH", "./chroma_db") 
+CHROMA_DB_PATH = os.path.join(CHROMA_DB_VOLUME_MOUNT_PATH, "diagrams_db") 
+# 确保目标目录存在
+os.makedirs(CHROMA_DB_PATH, exist_ok=True) 
 MODEL_NAME = "all-MiniLM-L6-v2"
 TOP_K = 1  # 默认返回的图表数量
 
@@ -70,7 +75,8 @@ async def startup_event():
         embedding_function = SentenceTransformerEmbeddingFunction(model_name=MODEL_NAME)
         
         logging.info(f"Initializing ChromaDB client at path: {CHROMA_DB_PATH}")
-        # 初始化 ChromaDB 客户端
+        # 确保父目录存在 (虽然上面也创建了，双重保险)
+        os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True) 
         client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         
         logging.info(f"Getting collection: {COLLECTION_NAME}")
@@ -145,4 +151,7 @@ async def health_check():
 # 运行服务器的入口点
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True) 
+    # 从环境变量获取端口，默认为 8000 (用于本地测试)
+    port = int(os.getenv("PORT", 8000)) 
+    # 移除 reload=True，不适用于生产环境
+    uvicorn.run("api:app", host="0.0.0.0", port=port) 
