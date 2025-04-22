@@ -1,6 +1,6 @@
 [build]
 builder = "docker"
-dockerfilePath = "dockerfile"  # 确保使用你的 Dockerfile
+dockerfilePath = "/diagramRAG/dockerfile"  # 确保使用你的 Dockerfile
 
 [deploy]
 startCommand = "uvicorn api:app --host 0.0.0.0 --port $PORT"
