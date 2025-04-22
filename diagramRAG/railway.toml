@@ -3,7 +3,7 @@ builder          = "NIXPACKS"
 buildCommand     = "pip install -r requirements.txt"
 
 [deploy]
-preDeployCommand = ["bash", "-lc", "python -c \"from api import setup_database; setup_database()\""]
+preDeployCommand    = ["bash -lc \"python -c 'from api import setup_database; setup_database()'\""]
 startCommand     = "uvicorn api:app --host 0.0.0.0 --port $PORT"
 healthcheckPath    = "/health"
 healthcheckTimeout = 300
