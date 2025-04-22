@@ -35,7 +35,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ content, diagrams }) => {
 
       // Find the corresponding diagram
       const diagramIndex = parseInt(match[1], 10);
-      const diagram = diagrams.find(d => d.index === diagramIndex || diagrams.indexOf(d) + 1 === diagramIndex);
+      const diagram = diagrams.find((d, idx) => idx + 1 === diagramIndex);
 
       // Add diagram segment if found
       if (diagram) {
