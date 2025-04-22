@@ -35,8 +35,23 @@ def setup_database():
         return
 
     try:
-        # 本地压缩包路径（仓库已包含该文件）
-        local_tar = os.path.join(os.getcwd(), "chroma_db_diagrams.tar.gz")
+        # 尝试多个可能的位置查找压缩包
+        possible_paths = [
+            os.path.join(os.getcwd(), "chroma_db_diagrams.tar.gz"),  # 当前目录
+            "/diagramRAG/chroma_db_diagrams.tar.gz",                        # /app 目录
+            os.path.join(os.path.dirname(__file__), "chroma_db_diagrams.tar.gz")  # 脚本所在目录
+        ]
+        
+        local_tar = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                local_tar = path
+                logging.info(f"找到压缩包: {local_tar}")
+                break
+                
+        if not local_tar:
+            raise FileNotFoundError(f"找不到数据库压缩包，尝试过以下路径: {possible_paths}")
+            
         temp_extract = "/tmp/extracted"
         logging.info(f"开始解压本地压缩包 {local_tar} ...")
 
