@@ -1,7 +1,8 @@
 [build]
-builder = "docker"
-dockerfilePath = "/diagramRAG/dockerfile"  # 确保使用你的 Dockerfile
+builder = "DOCKERFILE"
+dockerfilePath = "dockerfile"
 
 [deploy]
 startCommand = "uvicorn api:app --host 0.0.0.0 --port $PORT"
-restartPolicyType = "on-failure"
+restartPolicyType = "ON_FAILURE"
+healthcheckPath = "/health"
