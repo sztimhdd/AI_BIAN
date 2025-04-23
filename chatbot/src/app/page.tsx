@@ -763,41 +763,44 @@ export default function Page() {
       {showHero && (
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24">
             <div className="text-center">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
                 <span className="block">BIAN AI Knowledge Base</span>
               </h1>
-              <p className="mt-3 max-w-md mx-auto text-base sm:text-lg md:text-xl md:max-w-3xl text-blue-100">
+              <p className="mt-3 max-w-md mx-auto text-sm sm:text-base md:text-lg lg:text-xl md:max-w-3xl text-blue-100">
                 Your intelligent assistant for Banking Industry Architecture Network standards and frameworks
               </p>
-              <div className="mt-8 max-w-md mx-auto sm:max-w-lg md:max-w-3xl">
-                <div className="flex flex-wrap gap-3 justify-center">
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
-                    <Zap className="w-4 h-4" />
+              <div className="mt-6 sm:mt-8 max-w-md mx-auto sm:max-w-lg md:max-w-3xl">
+                <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 text-xs sm:text-sm">
+                    <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Powered by RAG + Generative AI</span>
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
-                    <MessageSquare className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 text-xs sm:text-sm">
+                    <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Natural conversation interface</span>
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
-                    <Map className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 text-xs sm:text-sm">
+                    <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Based on BIAN 12.0 Service Landscape</span>
                   </div>
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20">
-                    <Globe className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/10 backdrop-blur-sm text-white border border-white/20 text-xs sm:text-sm">
+                    <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Up-to-date with Web Search Augmentation</span>
                   </div>
                 </div>
               </div>
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <button 
                   onClick={() => {
                     setShowHero(false);
-                    messagesContainerRef.current?.focus();
+                    const inputElement = document.querySelector('input[placeholder^="Ask about BIAN"]');
+                    if (inputElement instanceof HTMLElement) {
+                       inputElement.focus();
+                    }
                   }}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-5 py-2.5 sm:px-6 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Start exploring
                 </button>
@@ -873,15 +876,16 @@ export default function Page() {
       )}
 
       <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-4 shadow-md">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
           {showPlaceholders && messages.length === 0 && (
-            <div className="flex flex-wrap gap-3 mb-4 justify-center">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 justify-center">
               {randomPlaceholders.map((option, index) => (
                 <button
                   key={index}
                   onClick={() => handleOptionSelect(option)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all whitespace-nowrap
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all 
                     backdrop-filter backdrop-blur-sm bg-opacity-20 hover:bg-opacity-30 transform hover:scale-105
+                    max-w-full sm:max-w-[48%] md:max-w-[220px]
                     ${
                       selectedOption === option
                         ? "bg-blue-600 text-white shadow-lg"
@@ -889,8 +893,8 @@ export default function Page() {
                     }`}
                   disabled={isLoading}
                 >
-                  <span>{option.emoji}</span>
-                  <span className="text-sm font-medium">{option.text}</span>
+                  <span className="flex-shrink-0">{option.emoji}</span>
+                  <span className="text-xs sm:text-sm font-medium truncate">{option.text}</span>
                 </button>
               ))}
             </div>
