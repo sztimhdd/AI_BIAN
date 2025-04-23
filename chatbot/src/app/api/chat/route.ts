@@ -885,15 +885,22 @@ const retrieveDiagrams = async (
   numResults: number = 3
 ): Promise<DiagramRetrievalResponse> => {
   try {
-    const diagramApiUrl = process.env.DIAGRAM_API_URL || "http://localhost:8000/retrieve_diagrams";
+    const diagramApiUrl = process.env.DIAGRAM_API_URL;
+
+    if (!diagramApiUrl) {
+      console.error("DIAGRAM_API_URL environment variable is not set!");
+      throw new Error("Diagram retrieval service URL is not configured.");
+    }
     
+    console.log(`Retrieving diagrams from: ${diagramApiUrl}`);
+
     const response = await fetch(diagramApiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        question: keywords, // 使用LLM生成的关键词而非原始问题
+        question: keywords,
         numResults,
         rerank: true,
       }),
