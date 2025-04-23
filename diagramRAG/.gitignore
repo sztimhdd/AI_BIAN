@@ -3,8 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-#BIAN Scrapper
-BIAN_Scrapper/
 
 # C extensions
 *.so
