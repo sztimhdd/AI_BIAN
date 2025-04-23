@@ -8,8 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-import tarfile
-import shutil
 
 # 配置日志
 logging.basicConfig(
@@ -20,77 +18,14 @@ logging.basicConfig(
 
 # 常量定义
 COLLECTION_NAME = "bian_diagrams"
-# 使用环境变量或默认路径
-CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "/app/chroma_db/diagrams_db")
-# 确保目录存在
+# CHROMA_DB_PATH = "./chroma_db_diagrams" # 旧路径
+# 从环境变量获取挂载路径，默认为本地路径
+CHROMA_DB_VOLUME_MOUNT_PATH = os.getenv("CHROMA_VOLUME_MOUNT_PATH", "./chroma_db") 
+CHROMA_DB_PATH = os.path.join(CHROMA_DB_VOLUME_MOUNT_PATH, "diagrams_db") 
+# 确保目标目录存在
 os.makedirs(CHROMA_DB_PATH, exist_ok=True) 
 MODEL_NAME = "all-MiniLM-L6-v2"
 TOP_K = 1  # 默认返回的图表数量
-
-def setup_database():
-    """设置数据库目录和文件"""
-    flag_file = os.path.join(CHROMA_DB_PATH, ".initialized")
-    if os.path.exists(flag_file):
-        logging.info("数据库已存在，跳过初始化")
-        return
-
-    try:
-        # 尝试多个可能的位置查找压缩包
-        possible_paths = [
-            os.path.join(os.getcwd(), "chroma_db_diagrams.tar.gz"),  # 当前目录
-            "/diagramRAG/chroma_db_diagrams.tar.gz",                        # /app 目录
-            os.path.join(os.path.dirname(__file__), "chroma_db_diagrams.tar.gz")  # 脚本所在目录
-        ]
-        
-        local_tar = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                local_tar = path
-                logging.info(f"找到压缩包: {local_tar}")
-                break
-                
-        if not local_tar:
-            raise FileNotFoundError(f"找不到数据库压缩包，尝试过以下路径: {possible_paths}")
-            
-        temp_extract = "/tmp/extracted"
-        logging.info(f"开始解压本地压缩包 {local_tar} ...")
-
-        # 创建临时提取目录
-        os.makedirs(temp_extract, exist_ok=True)
-
-        # 解压文件
-        with tarfile.open(local_tar) as tar:
-            logging.info(f"压缩包内容前10项: {tar.getnames()[:10]}")
-            tar.extractall(path=temp_extract)
-
-        # 解压后记录
-        logging.info(f"解压完成，临时目录内容: {os.listdir(temp_extract)}")
-
-        # 找到压缩包中的实际数据库目录
-        nested = os.path.join(temp_extract, "chroma_db_diagrams")
-        if os.path.isdir(nested):
-            src_path = nested
-        else:
-            src_path = temp_extract
-        logging.info(f"源目录: {src_path}")
-
-        # 确保目标目录存在
-        os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True)
-
-        # 复制文件到目标位置
-        if os.path.exists(CHROMA_DB_PATH):
-            shutil.rmtree(CHROMA_DB_PATH)
-        shutil.copytree(src_path, CHROMA_DB_PATH)
-
-        # 创建标记文件
-        with open(flag_file, "w") as f:
-            f.write("initialized")
-
-        logging.info(f"数据库成功初始化到 {CHROMA_DB_PATH}")
-
-    except Exception as e:
-        logging.error(f"设置数据库时出错: {e}")
-        raise
 
 # 定义输入模型
 class RetrieveDiagramsRequest(BaseModel):
@@ -135,41 +70,25 @@ async def startup_event():
     global embedding_function, client, collection
     
     try:
-        # 首先设置数据库
-        try:
-            setup_database()
-        except Exception as setup_err:
-            logging.error(f"数据库设置失败: {setup_err}")
-            # 继续执行，尝试使用可能已存在的数据库
-        
         logging.info(f"Loading embedding model: {MODEL_NAME}...")
-        # 直接使用模型名称初始化嵌入函数
+        # 直接使用模型名称初始化嵌入函数，而不是先加载模型
         embedding_function = SentenceTransformerEmbeddingFunction(model_name=MODEL_NAME)
         
         logging.info(f"Initializing ChromaDB client at path: {CHROMA_DB_PATH}")
-        # 确保父目录存在
+        # 确保父目录存在 (虽然上面也创建了，双重保险)
         os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True) 
         client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         
         logging.info(f"Getting collection: {COLLECTION_NAME}")
         # 获取数据集合
-        try:
-            collection = client.get_collection(name=COLLECTION_NAME)
-            logging.info(f"成功获取集合 {COLLECTION_NAME}")
-        except Exception as coll_err:
-            logging.error(f"获取集合失败: {coll_err}")
-            logging.info(f"尝试创建新集合 {COLLECTION_NAME}")
-            collection = client.create_collection(
-                name=COLLECTION_NAME,
-                embedding_function=embedding_function
-            )
+        collection = client.get_collection(
+            name=COLLECTION_NAME
+        )
         
         logging.info("Startup completed successfully.")
     except Exception as e:
         logging.error(f"Error during startup: {e}")
-        # 不要抛出异常，避免重启循环
-        # 记录错误但让应用继续运行
-        logging.error("应用将继续但可能无法正常工作")
+        raise
 
 # 检索图表端点
 @app.post("/retrieve_diagrams", response_model=DiagramRetrievalResponse)

@@ -3,5 +3,5 @@ uvicorn[standard] # 使用 standard 获取性能优化
 pydantic
 sentence-transformers
 chromadb
-python-dotenv
+python-dotenv # 如果你使用 .env 文件 (可选)
 requests # 通常 FastAPI 会用到，最好加上
