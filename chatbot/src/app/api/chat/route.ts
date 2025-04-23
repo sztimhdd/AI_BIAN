@@ -893,7 +893,7 @@ const retrieveDiagrams = async (
     }
     
     console.log(`Retrieving diagrams from: ${diagramApiUrl}`);
-
+    
     const response = await fetch(diagramApiUrl, {
       method: "POST",
       headers: {
