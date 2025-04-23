@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+import tarfile
+import shutil
 
 # 配置日志
 logging.basicConfig(
@@ -26,6 +28,91 @@ CHROMA_DB_PATH = os.path.join(CHROMA_DB_VOLUME_MOUNT_PATH, "diagrams_db")
 os.makedirs(CHROMA_DB_PATH, exist_ok=True) 
 MODEL_NAME = "all-MiniLM-L6-v2"
 TOP_K = 1  # 默认返回的图表数量
+
+# 添加 setup_database 函数
+def setup_database():
+    """设置数据库目录和文件: 检查初始化标记，如果未设置，则解压 tar.gz 文件"""
+    flag_file = os.path.join(CHROMA_DB_PATH, ".initialized")
+    if os.path.exists(flag_file):
+        logging.info(f"数据库 {CHROMA_DB_PATH} 已存在初始化标记，跳过设置")
+        return
+
+    # 查找压缩包路径 (Railway 构建环境中通常在 /app 下)
+    # 相对于脚本的位置可能不可靠，优先查找相对于当前工作目录和 /app
+    tar_filename = "chroma_db_diagrams.tar.gz"
+    possible_tar_paths = [
+        os.path.join(os.getcwd(), tar_filename), # 当前工作目录
+        os.path.join("/app", tar_filename),      # Railway 的 /app 目录
+        os.path.join(os.path.dirname(__file__), tar_filename) # 脚本所在目录 (备选)
+    ]
+    
+    tar_path = None
+    for p in possible_tar_paths:
+        if os.path.exists(p):
+            tar_path = p
+            logging.info(f"找到数据库压缩包: {tar_path}")
+            break
+    
+    if not tar_path:
+        raise FileNotFoundError(f"找不到数据库压缩包，尝试过以下路径: {possible_tar_paths}")
+
+    try:
+        logging.info(f"开始解压 {tar_path} 到 {CHROMA_DB_PATH}...")
+        
+        # 确保目标父目录存在
+        target_parent_dir = os.path.dirname(CHROMA_DB_PATH)
+        os.makedirs(target_parent_dir, exist_ok=True)
+
+        # 如果目标目录已存在但未初始化，先删除以确保清洁状态
+        if os.path.exists(CHROMA_DB_PATH):
+             logging.warning(f"目标目录 {CHROMA_DB_PATH} 已存在但未初始化，将删除重建")
+             shutil.rmtree(CHROMA_DB_PATH)
+        os.makedirs(CHROMA_DB_PATH) # 显式创建目标目录
+
+        # 解压
+        with tarfile.open(tar_path, "r:gz") as tar:
+            # 直接解压到目标目录
+            tar.extractall(path=CHROMA_DB_PATH) 
+            
+            # --- 处理可能的嵌套目录 ---
+            # 检查解压后根目录是否只包含一个目录 (通常是 'chroma_db_diagrams')
+            extracted_items = os.listdir(CHROMA_DB_PATH)
+            if len(extracted_items) == 1 and os.path.isdir(os.path.join(CHROMA_DB_PATH, extracted_items[0])):
+                 nested_dir_name = extracted_items[0]
+                 nested_dir_path = os.path.join(CHROMA_DB_PATH, nested_dir_name)
+                 logging.info(f"检测到嵌套目录 {nested_dir_path}，将移动内容到上层 {CHROMA_DB_PATH}...")
+                 
+                 # 创建临时目录用于移动，避免直接移动到自身
+                 temp_move_dir = CHROMA_DB_PATH + "_temp_move"
+                 os.makedirs(temp_move_dir, exist_ok=True)
+
+                 # 移动内容到临时目录
+                 for item in os.listdir(nested_dir_path):
+                     shutil.move(os.path.join(nested_dir_path, item), os.path.join(temp_move_dir, item))
+                 
+                 # 删除空的嵌套目录
+                 os.rmdir(nested_dir_path)
+                 
+                 # 将内容从临时目录移回目标目录
+                 for item in os.listdir(temp_move_dir):
+                      shutil.move(os.path.join(temp_move_dir, item), os.path.join(CHROMA_DB_PATH, item))
+                 
+                 # 删除临时目录
+                 os.rmdir(temp_move_dir)
+                 logging.info(f"嵌套目录内容移动完成.")
+            # --- 嵌套目录处理结束 ---
+
+        # 创建标记文件
+        with open(flag_file, "w") as f:
+            f.write("initialized")
+        logging.info(f"在 {CHROMA_DB_PATH} 创建初始化标记文件")
+
+        logging.info(f"数据库成功初始化到 {CHROMA_DB_PATH}")
+
+    except Exception as e:
+        logging.error(f"解压或设置数据库时出错: {e}")
+        # 在启动阶段失败很重要，需要抛出异常
+        raise
 
 # 定义输入模型
 class RetrieveDiagramsRequest(BaseModel):
@@ -70,13 +157,16 @@ async def startup_event():
     global embedding_function, client, collection
     
     try:
+        # --- 首先调用 setup_database ---
+        setup_database() 
+        
         logging.info(f"Loading embedding model: {MODEL_NAME}...")
         # 直接使用模型名称初始化嵌入函数，而不是先加载模型
         embedding_function = SentenceTransformerEmbeddingFunction(model_name=MODEL_NAME)
         
         logging.info(f"Initializing ChromaDB client at path: {CHROMA_DB_PATH}")
-        # 确保父目录存在 (虽然上面也创建了，双重保险)
-        os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True) 
+        # setup_database 应该已创建目录，这里不再需要 os.makedirs
+        # os.makedirs(os.path.dirname(CHROMA_DB_PATH), exist_ok=True) # 可以移除或注释掉
         client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         
         logging.info(f"Getting collection: {COLLECTION_NAME}")
