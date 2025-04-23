@@ -885,7 +885,7 @@ export default function Page() {
                   onClick={() => handleOptionSelect(option)}
                   className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all 
                     backdrop-filter backdrop-blur-sm bg-opacity-20 hover:bg-opacity-30 transform hover:scale-105
-                    max-w-full sm:max-w-[48%] md:max-w-[220px]
+                    flex-wrap sm:flex-nowrap
                     ${
                       selectedOption === option
                         ? "bg-blue-600 text-white shadow-lg"
@@ -894,7 +894,7 @@ export default function Page() {
                   disabled={isLoading}
                 >
                   <span className="flex-shrink-0">{option.emoji}</span>
-                  <span className="text-xs sm:text-sm font-medium truncate">{option.text}</span>
+                  <span className="text-xs sm:text-sm font-medium break-words">{option.text}</span>
                 </button>
               ))}
             </div>
