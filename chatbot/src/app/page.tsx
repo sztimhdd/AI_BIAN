@@ -735,7 +735,7 @@ export default function Page() {
                 Van Haren BIAN Certification
               </a>
               <a 
-                href="https://en.wikipedia.org/wiki/Bian" 
+                href="https://en.wikipedia.org/wiki/Banking_Industry_Architecture_Network" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-800 flex items-center gap-2"
