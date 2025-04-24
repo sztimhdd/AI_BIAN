@@ -348,3 +348,252 @@ Generate a comprehensive BIAN answer, citing all used sources appropriately.
 * **性能**: 95% 的查询响应时间 < 1 秒
 * **结果质量**: 通过 A/B 测试证明知识图谱增强显著提升用户满意度
 * **集成度**: 与现有RAG系统的无缝协作，提供统一的用户体验
+
+---
+
+## 10. BIAN Book与网站知识源整合方案
+
+为了全面把握BIAN框架知识，本系统将整合两个核心知识源：BIAN Book（2nd Edition）的深度概念解释和BIAN网站的最新实践指南。这种整合将为GraphRAG提供更丰富的语义基础。
+
+### 10.1 知识源特性对比
+
+| 特性 | BIAN Book 2nd Edition | BIAN 官方网站 |
+|-----|----------------------|--------------|
+| 内容性质 | 权威理论基础、概念框架 | 最新实践指南、服务域详情 |
+| 结构特点 | 系统化学术解释、标准定义 | 关系可视化、实现示例 |
+| 更新频率 | 版本发布（低频率） | 持续更新（高频率） |
+| 知识深度 | 深度概念解释（如功能模式、行为限定符） | 广度关系网络 |
+| 信息形式 | 文本段落、概念图表 | HTML页面、SVG图表、API定义 |
+
+### 10.2 三层知识整合模型
+
+构建层次化知识模型，融合两种来源的优势：
+
+```mermaid
+graph TD
+    A[用户查询] --> B{查询分析}
+    
+    B -->|概念定义查询| C[基础概念层]
+    B -->|关系查询| D[关系网络层]
+    B -->|实践应用查询| E[实践应用层]
+    
+    C -->|提供概念基础| F[生成回答]
+    D -->|提供结构关系| F
+    E -->|提供应用场景| F
+    
+    subgraph "主要数据来源"
+    C -.->|主要来源| G[BIAN Book]
+    D -.->|主要来源| H[知识图谱]
+    E -.->|混合来源| I[Book + 网站 + 图谱]
+    end
+```
+
+**层次说明:**
+1. **基础概念层**: 主要从BIAN Book提取，包含服务域正式定义、功能模式和行为限定符等标准术语
+2. **关系网络层**: 主要从网站SVG和知识图谱提取，呈现服务域间的交互关系和依赖
+3. **实践应用层**: 两种来源融合，连接理论概念与实际应用
+
+### 10.3 知识标注与映射实现
+
+为在知识图谱中整合BIAN Book的深度内容，采用以下标注策略：
+
+1. **概念属性增强**:
+   ```cypher
+   CREATE TAG ServiceDomainAttributes (
+       book_definition TEXT,      // BIAN Book中的正式定义
+       functional_pattern TEXT,   // 功能模式
+       behavior_qualifier TEXT,   // 行为限定符
+       source TEXT                // 数据来源（"Book" 或 "Website"）
+   )
+   ```
+
+2. **同义词网络**:
+   建立Book与网站间的术语映射表，如：
+   ```json
+   {
+     "CurrentAccountArrangment": ["CurrentAccountArrangement", "Current Account Control Record"],
+     "FunctionalPattern:Fulfill": ["Functional Pattern Fulfill", "履行功能模式"]
+   }
+   ```
+
+3. **引用关系类型**:
+   ```cypher
+   CREATE EDGE DEFINED_IN (page INT, section TEXT)  // 连接实体与Book中的定义
+   CREATE EDGE ILLUSTRATED_BY (figure INT)         // 连接实体与Book中的图表
+   ```
+
+### 10.4 查询处理与融合逻辑
+
+根据查询类型智能路由至最适合的知识源组合：
+
+```python
+def route_query(query_type, entities):
+    if query_type == "definition":
+        # 定义类查询优先使用Book知识
+        return {
+            "rag_priority": "textRAG",  # 优先文本RAG
+            "book_weight": 0.7,         # 较高权重
+            "graph_weight": 0.3,        # 较低权重
+            "web_weight": 0.2           # 最低权重
+        }
+    elif query_type == "relationship":
+        # 关系类查询优先使用图谱知识
+        return {
+            "rag_priority": "graphRAG", # 优先图谱RAG
+            "book_weight": 0.3,         # 较低权重
+            "graph_weight": 0.7,        # 较高权重
+            "web_weight": 0.3           # 较低权重
+        }
+    elif query_type == "implementation":
+        # 实现类查询优先使用网站和Web搜索
+        return {
+            "rag_priority": "hybridRAG", # 混合RAG
+            "book_weight": 0.3,          # 中等权重
+            "graph_weight": 0.4,         # 中等权重
+            "web_weight": 0.6            # 较高权重
+        }
+    # 更多查询类型...
+```
+
+### 10.5 具体整合示例
+
+以截图中的"Current Account服务域"为例：
+
+1. **从Book提取**:
+   - 功能模式"Fulfill"的正式定义
+   - 控制记录"CurrentAccountArrangment"的结构说明
+   - "AnalyticsObject"的概念解释
+
+2. **从网站提取**:
+   - 最新的服务域实现指南
+   - Current Account与其他服务域的交互关系
+   - 相关API端点和服务操作
+
+3. **知识图谱表示**:
+   ```cypher
+   // 创建服务域节点
+   CREATE (ca:ServiceDomain {name:"Current Account"})
+
+   // 添加Book来源的属性
+   SET ca.book_definition = "The Service Domain is the result of the Functional Pattern 'Fulfill', applied to the Asset Type 'Current Account'..."
+   SET ca.functional_pattern = "Fulfill"
+   SET ca.asset_type = "Current Account"
+   
+   // 添加控制记录关系
+   CREATE (cr:ControlRecord {name:"CurrentAccountArrangment"})
+   CREATE (ca)-[:HAS_CONTROL_RECORD]->(cr)
+   
+   // 添加分析对象
+   CREATE (ao:AnalyticsObject {name:"CurrentAccountArrangment_AnalyticsObject"})
+   CREATE (ca)-[:PROVIDES]->(ao)
+   
+   // 添加Book引用
+   CREATE (ca)-[:DEFINED_IN {page:69, section:"2.8"}]->(:BookReference {title:"BIAN Book 2nd Edition"})
+   ```
+
+### 10.6 查询融合示例提示词
+
+响应融合时，针对不同知识源的整合提示：
+
+```typescript
+// Book定义与图谱关系融合的提示词
+const fusionPrompt = `
+# ROLE
+You are an expert BIAN specialist integrating theoretical knowledge and practical relationships.
+
+# TASK
+Create a comprehensive answer about "${entity}" by combining:
+1. Formal definition from BIAN Book
+2. Relationship data from the knowledge graph
+3. Implementation details from BIAN website
+
+# INPUT
+Book Definition:
+"""
+${bookDefinition}
+"""
+
+Knowledge Graph Relationships:
+<graph-data>
+${JSON.stringify(graphData, null, 2)}
+</graph-data>
+
+Website Implementation Details:
+"""
+${websiteDetails}
+"""
+
+# OUTPUT
+Generate an integrated answer that combines theoretical foundation with practical relationships.
+Start with the formal definition, then explain how this Service Domain relates to others,
+and finally provide implementation guidance. Maintain proper attribution to sources.
+`;
+```
+
+通过这种多源整合方法，GraphRAG模块将能够提供既有理论深度又有实践广度的完整BIAN知识视图。
+
+---
+
+## 11. 实现细节
+
+### 11.1 API服务实现
+
+API服务采用FastAPI实现，提供高性能的异步处理和自动API文档生成：
+
+```python
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+
+app = FastAPI(
+    title="BIAN GraphRAG API",
+    description="知识图谱查询API，提供BIAN服务域关系检索",
+    version="1.0.0"
+)
+
+class GraphQueryRequest(BaseModel):
+    query: str
+    originalQuery: Optional[str] = None
+    queryType: Optional[str] = None
+    entities: Optional[List[str]] = None
+    maxHops: Optional[int] = 1
+    limit: Optional[int] = 5
+    includeMetadata: Optional[bool] = True
+
+@app.post("/api/graph-query")
+async def query_graph(request: GraphQueryRequest):
+    # 实现图谱查询逻辑
+    pass
+
+@app.get("/api/graph-query/health")
+async def health_check():
+    return {"status": "ok"}
+```
+
+### 11.2 NebulaGraph Schema定义
+
+图数据库Schema定义，支持BIAN领域建模：
+
+```cypher
+# 创建图空间
+CREATE SPACE IF NOT EXISTS bian_knowledge (partition_num=3, replica_factor=1, vid_type=FIXED_STRING(128));
+USE bian_knowledge;
+
+# 定义实体标签
+CREATE TAG IF NOT EXISTS ServiceDomain(name STRING, description STRING, category STRING);
+CREATE TAG IF NOT EXISTS BusinessObject(name STRING, description STRING);
+CREATE TAG IF NOT EXISTS ControlRecord(name STRING, description STRING);
+CREATE TAG IF NOT EXISTS ServiceOperation(name STRING, behavior STRING, input STRING, output STRING);
+CREATE TAG IF NOT EXISTS BookReference(title STRING, page INT, section STRING);
+
+# 定义关系边类型
+CREATE EDGE IF NOT EXISTS MANAGES(description STRING);
+CREATE EDGE IF NOT EXISTS PROVIDES(description STRING);
+CREATE EDGE IF NOT EXISTS INTERACTS_WITH(description STRING, direction STRING);
+CREATE EDGE IF NOT EXISTS ASSOCIATED_WITH(description STRING);
+CREATE EDGE IF NOT EXISTS IS_PART_OF(description STRING);
+CREATE EDGE IF NOT EXISTS AGGREGATED_BY(description STRING);
+CREATE EDGE IF NOT EXISTS GETS_INPUT_FROM(description STRING);
+CREATE EDGE IF NOT EXISTS REALIZED_BY(description STRING);
+CREATE EDGE IF NOT EXISTS DEFINED_IN(page INT, section STRING);
+```
