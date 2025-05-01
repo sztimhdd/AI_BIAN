@@ -840,7 +840,7 @@ export default function Page() {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                      The underlying RAG knowledge base of this assistant is trained on BIAN 12.0 Service Landscape, BIAN Book 2nd Edition, and Web Search augmentation.
+                      This tool does NOT store any user data. The underlying RAG knowledge base of this assistant is trained on BIAN 12.0 Service Landscape, BIAN Book 2nd Edition, and Web Search augmentation.
                     </p>
                   </div>
                 </div>
