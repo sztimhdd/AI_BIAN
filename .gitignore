@@ -1,5 +1,6 @@
 chroma_db_diagrams/
 venv/
+graphrag-env/
 diagramRAG/venv/pyvenv.cfg
 diagramRAG/venv/bin/activate
 diagramRAG/venv/bin/activate.csh
