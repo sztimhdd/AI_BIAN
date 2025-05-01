@@ -488,9 +488,14 @@ export default function Page() {
         </div>
         
         <div className="prose dark:prose-invert max-w-none">
+          <h3>Intellectual Property</h3>
+          <p>
+          This tool uses publicly available information about the BIAN framework for educational purposes. All rights to the BIAN framework belong to their respective owners. If you need to reach out to express your concerns, please contact me at huhai.orion@gmail.com.
+          </p>
+        
           <h3>Product Overview</h3>
           <p>
-            AI_BIAN is an intelligent Q&A system built with Next.js 14, specifically designed to provide professional answers about the BIAN (Banking Industry Architecture Network) framework.
+            AI_BIAN is a personal non-profit project that showcases an intelligent Q&A system built with Next.js 14, specifically designed to provide professional answers about the BIAN (Banking Industry Architecture Network) framework.
             The system uses RAG (Retrieval-Augmented Generation) technology combined with the Gemini Pro large language model to provide accurate and comprehensive BIAN-related knowledge.
           </p>
           
