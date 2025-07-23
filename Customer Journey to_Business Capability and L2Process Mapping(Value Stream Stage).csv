@@ -1,0 +1,457 @@
+CJM Stage,Customer Journey Service Moment,Enabled by Business Capability,Enabled by Process
+DISCOVER,01. Get Referred to EDC,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Insights and Analytics
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Customer Onboarding
+Customer Enablement (L1) > Partner Management (L2) > Partner Data Exchange and Reporting
+Customer Enablement (L1) > Partner Management (L2) > Partner Referrals (Inbound)
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Prospecting & Segmentation","C4.1 - Manage channel development and segmentation
+C5.1 - Manage customer lead and opportunity
+D23.2 - Qualify TELP Eligibility
+N2.1 - Manage Partner Alliances
+R7.2 – Onboard and Respond to Customer Requests
+R7.4 - Manage Contact Center"
+,02. View EDC Media,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Advertising Campaign Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Insights and Analytics
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Leads Management
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Prospecting & Segmentation
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","A4.1 – Manage Brand Strategy and Creative Services
+A4.2– Govern and Distribute External Communication Content
+C3.1 - Execute marketing campaigns
+C3.3 - Manage Marketing Products
+C4.1 - Manage channel development and segmentation
+R2.5 - Deliver Outbound Customer Communications"
+,03. Visit EDC.ca,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Insights and Analytics
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Leads Management
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Prospecting & Segmentation
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","A4.1 – Manage Brand Strategy and Creative Services
+A4.2– Govern and Distribute External Communication Content
+C1.1 - Research markets, customers, and capabilities
+C3.3 - Manage Marketing Products
+C3.4 - Govern Marketing Data
+C3.5 - Manage interactive digital channel
+C4.1 - Manage channel development and segmentation"
+,04. Explore & Consume Content,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Advertising Campaign Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Marketing and Content Distribution
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Leads Management
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Prospecting & Segmentation
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","A4.1 – Manage Brand Strategy and Creative Services
+A4.2– Govern and Distribute External Communication Content
+C3.1 - Execute marketing campaigns
+C3.4 - Govern Marketing Data
+C4.1 - Manage channel development and segmentation
+R2.5 - Deliver Outbound Customer Communications"
+ENGAGE,05. Create an Account & Log In,"Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Account Access and Permissions
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Contact Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Account Lifecycle & Monitoring
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Identity Proofing & Verification
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","C3.5 - Manage interactive digital channel
+K1.1 - Manage Company Information
+R7.1 - Create Account and Manage Contacts
+R7.2 – Onboard and Respond to Customer Requests"
+,06. Complete Profile & Manage Account,"Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Account Access and Permissions
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Contact Management
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Data Collection and Reuse
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Customer Onboarding
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Account Lifecycle & Monitoring
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Prospecting & Segmentation
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","C5.1 - Manage customer lead and opportunity
+K1.1 - Manage Company Information
+R7.1 - Create Account and Manage Contacts"
+,07. Submit an Inquiry,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Needs Triage and Eligibility
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Inbound Inquiry Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Leads Management
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Prospecting & Segmentation
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","C3.4 - Govern Marketing Data
+C3.5 - Manage interactive digital channel
+C5.1 - Manage customer lead and opportunity
+R7.4 - Manage Contact Center"
+,08. Connect with EDC Representatives,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Needs Triage and Eligibility
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Inbound Inquiry Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Leads Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Sales Pipeline Management & Forecasting","C5.1 - Manage customer lead and opportunity
+R7.2 – Onboard and Respond to Customer Requests
+R7.4 - Manage Contact Center"
+EVALUATE,09. Explore & Consider Solutions,"Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Account Access and Permissions
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Account Strategy & Servicing
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Data Collection and Reuse
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Needs Triage and Eligibility
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Leads Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Sales Pipeline Management & Forecasting
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","B1.1 - Govern the Financial Product Innovation Program
+B3.1 – Sustain and Iterate Financial Product
+C4.2 -Develop Account Management Strategies
+C5.1 - Manage customer lead and opportunity
+C5.3 - Execute on Account Management Models
+F8.1 - Assess Eligibility and Track Performance"
+,10. Select Solutions,"Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Account Access and Permissions
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Account Strategy & Servicing
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Data Collection and Reuse
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Needs Triage and Eligibility
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Sales Pipeline Management & Forecasting
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics","B1.1 - Govern the Financial Product Innovation Program
+C4.2 -Develop Account Management Strategies
+C5.1 - Manage customer lead and opportunity
+C5.3 - Execute on Account Management Models
+F8.1 - Assess Eligibility and Track Performance"
+REDIRECT,11. Get Referred to Financial Partner,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Account Strategy & Servicing
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Partner Management (L2) > Partner Referrals (Outbound)","C4.2 -Develop Account Management Strategies
+C5.1 - Manage customer lead and opportunity
+N2.3 - Report and Perform Analytics on Partner Channels"
+,12. Get Referred to Business Support,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Account Strategy & Servicing
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Partner Management (L2) > Partner Referrals (Outbound)","C4.2 -Develop Account Management Strategies
+C5.1 - Manage customer lead and opportunity
+N2.3 - Report and Perform Analytics on Partner Channels"
+PURCHASE,13. Apply for Products & Services,"Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Account Access and Permissions
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Corporate Credit Assessment
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Data Collection and Reuse
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Documents Exchange
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Customer Onboarding
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital auto-fill Application
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Signatures
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Economic Transactional Advisory
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Enhanced Due Diligence
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Application, Eligibility and Triage
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Solution Structuring/Party Management
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Underwriting, Risk & Due Diligence
+Customer Enablement (L1) > Inbound Experience, Onboarding & Lifecycle Management (L2) > Identity Proofing & Verification
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Application, Eligibility and Triage
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Credit Granting, Risk & Due Diligence
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Solution Structuring/Party Management
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Underwriting, Risk & Due Diligence
+Customer Solutions (L1) > Investments Value Stream (L2) > Investment Solution Structuring/Party Management
+Customer Solutions (L1) > Investments Value Stream (L2) > Investments Application, Eligibility and Triage
+Customer Solutions (L1) > Investments Value Stream (L2) > Investments Underwriting, Risk & Due Diligence
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Legal Transactional and Asset Services
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Market & Industry Information & Advisory
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Non-Credit Risk Assessment (ESG, FC-KYC)
+Customer Solutions (L1) > Non-Financial Products (L2)
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Sales Pipeline Management & Forecasting
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Straight Through Processing & Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Taxation Advisory
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Technical  Advisory & Assessmment
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Web Experience & Analytics
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee Credit Granting
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee Solution Structuring/Party Management
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee Underwriting, Risk & Due Diligence
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantees Application, Eligibility and Triage","A6.1 - Assess Economic and Geopolitical Risk
+B3.5 - Manage Insurance and Working Capital Solutions Product Standards
+C5.3 - Execute on Account Management Models
+D2.2 - Create Policy
+D2.9 - Deliver Trade Partnership Insurance
+D20.1 – Underwrite ITG Capacity and Facility
+D23.2 - Qualify TELP Eligibility
+D26.1 - Qualify and Triage IFG Lead
+D26.2 - Qualify and Triage ITG Lead
+D8.1 – Underwrite and Monitor FI Insurance Credit and Deals
+F1.1 - Assess and Triage Financing Solution
+F3.1 - Intake Strategic Financing Opportunity
+F3.2 - Intake CMSB CL, IFD or SPF Opportunity
+F3.5 - Perform FC/KYC Due Diligence
+F5.1 - Deliver, Manage and Monitor Investments
+F7.3 - Manage Mid-Market Growth Business Opportunities
+F8.1 - Assess Eligibility and Track Performance"
+,14. Activate Products & Services,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Delegation of Authority
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Disclosure
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Financial Limits Framework -Obligor 360
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Solution Offer, Authorization and Agreement Finalization
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Portfolio Management
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Solution Offer, Authorization and Policy Finalization
+Customer Solutions (L1) > Investments Value Stream (L2) > Investment Solution Offer, Authorization and Agreement Finalization
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Solution Offer, Authorization and Guarantee Finalization","D2.3 - Administer Policy
+D2.9 - Deliver Trade Partnership Insurance
+D20.1 – Underwrite ITG Capacity and Facility
+D20.2 – Authorize ITG Transaction
+D20.3 – Underwrite ITG Policy
+D21.1 - Underwrite IFG Agreement
+D23.3 - Manage TELP Transactions
+D8.1 – Underwrite and Monitor FI Insurance Credit and Deals
+F1.2 - Manage Portfolio
+F1.5 - Underwrite Financing Solutions
+F1.8 - Deliver Cleantech Financing
+F2.3 - Manage Credit Risk and Authorize Ratings
+F5.1 - Deliver, Manage and Monitor Investments
+K1.1 - Manage Company Information
+K1.3 - Manage Business Relevant Counterparty Information
+M1.4 - Manage Enterprise Risk Policies
+M1.5 - Govern Credit Commitment Delegation of Authority
+M1.6 - Manage Credit Commitment Delegation of Authority Operations
+M3.11 – Manage Risk and Data Analytics
+M3.7 - Manage transfer of financial risk
+S4.1 – Conduct Financing and investment ESG Due Diligence
+S4.2 – Conduct IWCS ESG Due Diligence
+S4.3 – Manage ESG capacity and escalations"
+,15. Receive Invoice & Pay Bill,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Payments
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Solution Offer, Authorization and Agreement Finalization
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Solution Offer, Authorization and Policy Finalization
+Customer Solutions (L1) > Investments Value Stream (L2) > Investments Payables and Receivables
+Customer Solutions (L1) > Financing Value Stream (L2) > Loans Payables and Receivables
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Accounts Payable/Accounts Receivable","J3.1 Manage Guarantee Accounts Receivable
+J3.2 - Manage Loan Facility
+J3.4 - Manage Guarantee Facility
+J4.1 - Prepare Invoice
+J4.2 - Issue Payments
+J4.4 - Manage Bank Accounts and Cash
+J9.1 - Book & Bill Fees
+J9.2 - Manage Deposits
+J9.3 - Process Account Receivables"
+,16. Renew or Negotiate Terms,"Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Corporate Credit Assessment
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Customer Documents Exchange
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital auto-fill Application
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Signatures
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Economic Transactional Advisory
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Solution Structuring/Party Management
+Customer Solutions (L1) > Financing Value Stream (L2) > Financing Underwriting, Risk & Due Diligence
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Solution Structuring/Party Management
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Underwriting, Risk & Due Diligence
+Customer Solutions (L1) > Investments Value Stream (L2) > Investments Underwriting, Risk & Due Diligence
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Legal Transactional and Asset Services
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Market & Industry Information & Advisory
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Straight Through Processing & Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Technical  Advisory & Assessmment
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee Solution Structuring/Party Management
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee Underwriting, Risk & Due Diligence","C5.3 - Execute on Account Management Models
+D10.3 - Administer PRI Policy lifecycle
+D2.3 - Administer Policy
+D2.9 - Deliver Trade Partnership Insurance
+D20.1 – Underwrite ITG Capacity and Facility
+D20.2 – Authorize ITG Transaction
+D20.3 – Underwrite ITG Policy
+D21.1 - Underwrite IFG Agreement
+D23.3 - Manage TELP Transactions
+D8.1 – Underwrite and Monitor FI Insurance Credit and Deals
+F1.2 - Manage Portfolio
+F1.5 - Underwrite Financing Solutions
+F1.8 - Deliver Cleantech Financing
+F2.3 - Manage Credit Risk and Authorize Ratings
+F3.5 - Perform FC/KYC Due Diligence
+F5.1 - Deliver, Manage and Monitor Investments
+K1.1 - Manage Company Information
+K1.3 - Manage Business Relevant Counterparty Information
+M1.5 - Govern Credit Commitment Delegation of Authority
+M1.6 - Manage Credit Commitment Delegation of Authority Operations
+M3.11 – Manage Risk and Data Analytics
+M3.7 - Manage transfer of financial risk
+S4.1 – Conduct Financing and investment ESG Due Diligence
+S4.2 – Conduct IWCS ESG Due Diligence
+S4.3 – Manage ESG capacity and escalations
+S5.2 - Monitor Transactions for FC/KYC Change"
+USE,17. Manage Insurance Policy,"Customer Solutions (L1) > Insurance Value Stream (L2) > Claims Management
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Credit Risk Assessment
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Crisis Advisory
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Signatures
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Accounts Payables/Accounts Receivables
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Credit Granting, Risk & Due Diligence
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Portfolio Management
+Customer Solutions (L1) > Insurance Value Stream (L2) > Insurance Solution Structuring/Party Management
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Solution Analytics and Portfolio Management
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Solution Financial  Risk Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Special Risks & Write-offs
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Straight Through Processing & Tracking","A6.1 - Assess Economic and Geopolitical Risk
+D10.3 - Administer PRI Policy lifecycle
+D2.3 - Administer Policy
+D4.1 - Assess Buyer Risk & Grant Credit
+D4.5 - Monitor and Update Country Information
+D4.6 - Monitor Buyer and Update Credit limits
+D5.1 - Submit Overdue and Claim
+D5.2 - Manage Overdue and Repayment Plans
+D5.3 - Manage Claim
+D5.4 - Manage Recovery
+D5.8 - Manage ITG Claims & Recoveries
+D8.1 – Underwrite and Monitor FI Insurance Credit and Deals
+J10.3 - Provide Liquidity
+J4.1 - Prepare Invoice
+J4.2 - Issue Payments
+J4.4 - Manage Bank Accounts and Cash
+J9.1 - Book & Bill Fees
+J9.2 - Manage Deposits
+J9.3 - Process Account Receivables
+M3.7 - Manage transfer of financial risk
+M3.8 - Manage Special Risks
+N7.2 - Manage Insurance, Guarantee and Liability (CARD/Special Risk) Legal Transactional Risk
+S5.1 - Monitor FC/KYC Counterparties
+S5.2 - Monitor Transactions for FC/KYC Change"
+,18. Access an EDC Investment,"Customer Solutions (L1) > Solution Operations & Enablement (L2) > Covenants Monitoring
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Credit Risk Assessment
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Crisis Advisory
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Investments Value Stream (L2) > Divestitures
+Customer Solutions (L1) > Investments Value Stream (L2) > Investments Asset Management
+Customer Solutions (L1) > Investments Value Stream (L2) > Investments Payables and Receivables
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Solution Analytics and Portfolio Management
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Solution Financial  Risk Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Special Risks & Write-offs","F5.1 - Deliver, Manage and Monitor Investments
+F7.3 - Manage Mid-Market Growth Business Opportunities
+J10.3 - Provide Liquidity
+J4.2 - Issue Payments
+J4.4 - Manage Bank Accounts and Cash
+J9.2 - Manage Deposits
+M3.7 - Manage transfer of financial risk
+M3.8 - Manage Special Risks
+N7.2 - Manage Insurance, Guarantee and Liability (CARD/Special Risk) Legal Transactional Risk
+S5.1 - Monitor FC/KYC Counterparties
+S5.2 - Monitor Transactions for FC/KYC Change"
+,19. Access Capital with a Guarantee,"Customer Solutions (L1) > Solution Operations & Enablement (L2) > Claims/Exception Adjudication & Recoveries
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Covenants Monitoring
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Credit Risk Assessment
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Crisis Advisory
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Web Experience and Digital Account Interactions (L2) > Digital Signatures
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Solution Analytics and Portfolio Management
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Solution Delivery Automation (RPA)
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Solution Financial  Risk Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Special Risks & Write-offs
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Accounts Payable/Accounts Receivable
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Call Management
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee (Asset) Management
+Customer Solutions (L1) > Working Capital Value Stream (L2) > Working Capital Guarantee Credit Granting","A6.1 - Assess Economic and Geopolitical Risk
+D20.1 – Underwrite ITG Capacity and Facility
+D23.3 - Manage TELP Transactions
+D4.1 - Assess Buyer Risk & Grant Credit
+D5.1 - Submit Overdue and Claim
+D5.3 - Manage Claim
+D5.8 - Manage ITG Claims & Recoveries
+J10.3 - Provide Liquidity
+J3.1 Manage Guarantee Accounts Receivable
+J3.4 - Manage Guarantee Facility
+J4.1 - Prepare Invoice
+J4.2 - Issue Payments
+J4.4 - Manage Bank Accounts and Cash
+J9.1 - Book & Bill Fees
+J9.2 - Manage Deposits
+J9.3 - Process Account Receivables
+K1.1 - Manage Company Information
+K1.3 - Manage Business Relevant Counterparty Information
+M3.7 - Manage transfer of financial risk
+M3.8 - Manage Special Risks
+N7.2 - Manage Insurance, Guarantee and Liability (CARD/Special Risk) Legal Transactional Risk
+S4.2 – Conduct IWCS ESG Due Diligence
+S4.3 – Manage ESG capacity and escalations
+S4.5 - Quantify and Manage Financed Emissions for Commercial Loans and Project Finance
+S5.1 - Monitor FC/KYC Counterparties
+S5.2 - Monitor Transactions for FC/KYC Change"
+,20. Access Direct Lending,"Customer Solutions (L1) > Solution Operations & Enablement (L2) > Claims/Exception Adjudication & Recoveries
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Covenants Monitoring
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Credit Risk Assessment
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Crisis Advisory
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Financing Value Stream (L2) > Loan Impairment and Defaults
+Customer Solutions (L1) > Financing Value Stream (L2) > Loans Administration
+Customer Solutions (L1) > Financing Value Stream (L2) > Loans Asset Management
+Customer Solutions (L1) > Financing Value Stream (L2) > Loans Payables and Receivables
+Customer Solutions (L1) > Financing Value Stream (L2) > Loans Portfolio Management
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Solution Analytics and Portfolio Management
+Customer Enablement (L1) > Customer Risk Management-ESG & Credit (L2) > Solution Financial  Risk Monitoring
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Special Risks & Write-offs","A6.1 - Assess Economic and Geopolitical Risk
+F1.5 - Underwrite Financing Solutions
+F1.8 - Deliver Cleantech Financing
+F2.1 - Manage and Monitor PD Ratings
+F2.2 - Manage and Monitor Covenants
+F2.3 - Manage Credit Risk and Authorize Ratings
+F3.2 - Intake CMSB CL, IFD or SPF Opportunity
+F3.5 - Perform FC/KYC Due Diligence
+J10.3 - Provide Liquidity
+J3.2 - Manage Loan Facility
+J4.1 - Prepare Invoice
+J4.2 - Issue Payments
+J4.4 - Manage Bank Accounts and Cash
+J9.1 - Book & Bill Fees
+J9.2 - Manage Deposits
+J9.3 - Process Account Receivables
+K1.1 - Manage Company Information
+K1.3 - Manage Business Relevant Counterparty Information
+M3.7 - Manage transfer of financial risk
+M3.8 - Manage Special Risks
+N7.1 - Manage Financing Legal Transactional Risk
+N7.2 - Manage Insurance, Guarantee and Liability (CARD/Special Risk) Legal Transactional Risk
+S4.1 – Conduct Financing and investment ESG Due Diligence
+S4.3 – Manage ESG capacity and escalations
+S4.5 - Quantify and Manage Financed Emissions for Commercial Loans and Project Finance
+S5.1 - Monitor FC/KYC Counterparties
+S5.2 - Monitor Transactions for FC/KYC Change"
+,21. Attend an Event,"Customer Solutions (L1) > Non-Financial Products (L2) > Connections Demand Management
+Customer Solutions (L1) > Non-Financial Products (L2) > Connections Events Management
+Customer Solutions (L1) > Non-Financial Products (L2) > Connections Services Application, Eligibility and Triage
+Customer Solutions (L1) > Non-Financial Products (L2) > Connections Supply Management (CanCap)
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring","F7.1 - Manage Business Connections
+F7.3 - Manage Mid-Market Growth Business Opportunities
+G1.1 - Plan and Execute Knowledge solution"
+,22. Access Knowledge Tools & Resources,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Non-Financial Products (L2) > Knowledge Services Application, Eligibility and Triage
+Customer Solutions (L1) > Non-Financial Products (L2) > Knowledge Services Provisioning
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring
+Customer Solutions (L1) > Non-Financial Products (L2) > Proof of Payment","A6.8 - Manage Market & Industry Intelligence
+B1.2 - Govern the Knowledge Product Innovation Program
+B2.3 - Design and Develop New Knowledge Product
+B3.3 – Sustain and Iterate Knowledge Product/Service
+C1.1 - Research markets, customers, and capabilities
+G1.1 - Plan and Execute Knowledge solution"
+SUCCEED,23. Leverage Business Connections,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring","A6.8 - Manage Market & Industry Intelligence
+C1.1 - Research markets, customers, and capabilities
+F7.1 - Manage Business Connections"
+,24. Leverage EDC Advisory Services,"Customer Solutions (L1) > Non-Financial Products (L2) > Advisory Services
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Party FC-KYC Monitoring","A6.8 - Manage Market & Industry Intelligence
+B1.2 - Govern the Knowledge Product Innovation Program
+C1.1 - Research markets, customers, and capabilities
+G1.1 - Plan and Execute Knowledge solution
+R2.5 - Deliver Outbound Customer Communications"
+,25. Get Help & Customer Support,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer 360
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Solutions (L1) > Solution Operations & Enablement (L2) > Customer Support Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Support Operations","G1.1 - Plan and Execute Knowledge solution
+R1.1 - Nurture Customer Relationship
+R7.4 - Manage Contact Center"
+,26. Deepen the Relationship,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Insights and Analytics
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking","F7.1 - Manage Business Connections
+N2.1 - Manage Partner Alliances
+N2.5 - Manage Broker Relationship
+R1.1 - Nurture Customer Relationship"
+ADVOCATE,27. Provide Feedback,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Feedback and Complaints
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Partner Management (L2) > Partner Feedback",R2.1 - Track and Analyze Customer Net Promoter Score (NPS)
+,28. Participate in Co-Creation,"Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Feedback and Complaints
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Partner Management (L2) > Partner Feedback
+Strategy and Execution Enablement (L1) > Product Management (L2) > Product Innovation","B2.1 – Design and Develop New Financial Product
+B2.3 - Design and Develop New Knowledge Product"
+,29. Contribute Testimonial,"Strategy and Execution Enablement (L1) > Marketing Strategy (L2) > Brand Management
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Feedback and Complaints
+Customer Enablement (L1) > Customer Relationship Management & Support (L2) > Customer Interaction Tracking
+Customer Enablement (L1) > Partner Management (L2) > Partner Feedback",R1.1 - Nurture Customer Relationship
